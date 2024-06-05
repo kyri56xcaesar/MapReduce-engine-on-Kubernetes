@@ -5,11 +5,26 @@
 - [x] Sessions
 - [x] Database
 - [ ] Admin Panel
-- [ ] Jobs
+- [ ] Job posting
 
-### Authentication Service
+# Authentication attached to UI
+- [x] Basic functionality attached
 
 ### Manager Service
+# Workers are spawned and monitored by the Manager Service
+- [ ] Initialization, talk to cluster.
+- [ ] Job Configuring
+- [ ] Job Submitting
 
 
-### Workers
+
+### Shared File System
+# Basically K8S node/pod configurement (PVC: persistent volume claims etc)
+- [ ] exploring...
+
+### Distributed Data Service
+# Fault tolerance handling, can be Zookeeper or the K8S Built in features
+- [ ] exploring...
+
+
+
