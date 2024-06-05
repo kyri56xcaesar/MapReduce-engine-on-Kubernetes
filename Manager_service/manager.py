@@ -2,6 +2,17 @@ import sys, os
 import Jobs
 import json
 from flask import *
+from kubernetes import client, config
+
+
+
+# This service should provide an REST api in order to setup an execution of a JOB
+#
+# And handle the execution of the job
+#
+#
+#
+#
 
 
 app = Flask(__name__)
