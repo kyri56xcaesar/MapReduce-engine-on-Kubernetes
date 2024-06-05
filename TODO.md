@@ -9,8 +9,7 @@
 
 ### Authentication Service
 
-### Monitoring Service
+### Manager Service
 
-### Zookeeper Service
 
 ### Workers

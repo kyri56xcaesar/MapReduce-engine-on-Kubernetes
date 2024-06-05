@@ -15,6 +15,17 @@ from kubernetes import client, config
 #
 
 
+
+
+# API 
+# /health if service is running
+# /  idk yet
+# /setup, recieve map/reduce functions, filename
+# /submit-job, submit the job to K8S
+# /check/id  -> check job id status
+#
+#
+
 app = Flask(__name__)
 PORT = 5000
 
@@ -29,6 +40,8 @@ jobs : Jobs.Job = list()
 def health():
     return {'status':'g u c c i'}
 
+
+# should check 
 @app.route("/check", methods=["GET"])
 def check():
     pass
@@ -52,6 +65,11 @@ def configure_job():
     
     # create a new "job" placeholder
     request_data = request.get_json()
+    
+    map_file = request.files['mapper.py']
+    reduce_file = request.files['reducer.py']
+    
+    
 
     print(request_data)
     
