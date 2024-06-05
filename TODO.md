@@ -1,4 +1,4 @@
-## To-do
+# To-do
 
 ### User Interface Service ✓
 - [x] Basic functionality
@@ -7,11 +7,11 @@
 - [ ] Admin Panel
 - [ ] Job posting
 
-# Authentication attached to UI
+#### Authentication attached to UI
 - [x] Basic functionality attached
 
 ### Manager Service
-# Workers are spawned and monitored by the Manager Service
+#### Workers are spawned and monitored by the Manager Service
 - [ ] Initialization, talk to cluster.
 - [ ] Job Configuring
 - [ ] Job Submitting
