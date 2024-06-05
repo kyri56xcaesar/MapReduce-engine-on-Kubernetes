@@ -19,11 +19,11 @@
 
 
 ### Shared File System
-# Basically K8S node/pod configurement (PVC: persistent volume claims etc)
+#### Basically K8S node/pod configurement (PVC: persistent volume claims etc)
 - [ ] exploring...
 
 ### Distributed Data Service
-# Fault tolerance handling, can be Zookeeper or the K8S Built in features
+#### Fault tolerance handling, can be Zookeeper or the K8S Built in features
 - [ ] exploring...
 
 
