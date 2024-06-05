@@ -1,7 +1,5 @@
--make sure that no unecessary requests are made
--delete database when server goes down?
--defensive code
--cleanup
--add comments
--fix some bugs
 -organize project tree
+-make project private and add collaborators
+-defensive code
+-add comments
+-delete database when server goes down?
