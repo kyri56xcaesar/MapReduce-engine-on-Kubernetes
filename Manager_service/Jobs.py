@@ -4,6 +4,15 @@
 
 
 job_id_counter = 0
+def next_jid_counter() -> int:
+    # increment jid
+    global job_id_counter
+    
+    current_id = job_id_counter
+    
+    job_id_counter += 1
+    
+    return current_id
 class Job:
     
     def __init__(self, JobConfiguration) -> None:
@@ -42,7 +51,8 @@ class JobConfiguration:
     def ready(self):
         return self.data_set_Ready or self.mapper_func_Ready or self.reducer_func_Ready
         
-    
+
+
     
 
 t = JobConfiguration("word_count_data.txt")

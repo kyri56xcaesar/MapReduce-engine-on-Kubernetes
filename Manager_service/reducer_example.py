@@ -10,4 +10,3 @@ def reducer(entries):
                 accumulator[key] = value
     
     return accumulator
-    

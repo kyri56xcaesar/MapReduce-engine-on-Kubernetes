@@ -6,19 +6,25 @@ url = "http://localhost:5000/" + route
 # response = requests.get(url)
 
 
-MAPPER = 'mapper_example.py'
-REDUCER = 'reducer_example.py'
+# Paths to files
+MAPPER = './mapper_example.py'
+REDUCER = './reducer_example.py'
+
+FILENAME = "./word_count_data.txt"
 
 files = {
-    'mapper' : (MAPPER, open(''))
+    'mapper' : (MAPPER, open(MAPPER), 'rb'),
+    'reducer' : (REDUCER, open(REDUCER), 'rb')
+    
 }
 
+data = {
+    'filename' : FILENAME
+}
 
-response = requests.post(url,
-    headers = {"Content-Type" : "application/json"},
-    data = {"key" : "value"}
-                         
-)
+cookie = {'jid': '0'}
+# send the post request
+response = requests.post(url, files=files, data=data, cookies=cookie)
 
-
-print(response)
+print('Status code:', response.status_code)
+print('Response text:', response.text)
