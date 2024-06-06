@@ -1,14 +1,20 @@
-# Distributed Systems [PLH419]
+# UI Service
 
-## Install
+## To run normally
+### Install
 ```sh
 pip install -r requirements.txt
 ```
 
-## Run
+### Run
 Run the server:  
 ```sh
 python server.py
+```
+
+## To run dockerised
+```sh
+build-docker.sh
 ```
 
 Interact with the server through the client:  
