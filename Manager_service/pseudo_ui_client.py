@@ -24,7 +24,7 @@ data = {
 
 cookie = {'jid': '0'}
 # send the post request
-response = requests.post(url, files=files, data=data, cookies=cookie)
+response = requests.post(url, files=files,  cookies=cookie)
 
 print('Status code:', response.status_code)
 print('Response text:', response.text)
