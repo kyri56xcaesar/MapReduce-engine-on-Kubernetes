@@ -14,9 +14,10 @@
 
 ### Manager Service
 #### Workers are spawned and monitored by the Manager Service
-- [ ] Initialization, talk to cluster.
-- [ ] Job Configuring
+- [x] Job Configuring
+- [ ] Hold Jobs in a db
 - [ ] Job Submitting
+- [ ] Initialization, talk to cluster.
 
 ### Shared File System
 #### Basically K8S node/pod configurement (PVC: persistent volume claims etc)
