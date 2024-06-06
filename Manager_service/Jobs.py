@@ -1,9 +1,9 @@
 # Job information and logistics are hold here.
 # @TODO 
-# - 
+# - should use a database
 
 
-job_id_counter = 0
+job_id_counter = -1
 
 class Job:
     
@@ -37,7 +37,17 @@ class Job:
             self.JobConfiguration.mapper_func_Ready = True
             self.JobConfiguration.reducer_func_Ready = True
 
+    def set_mapper_func(self, mapper):
+        self.JobConfiguration.mapper_func = mapper
+        self.JobConfiguration.mapper_func_Ready = True
 
+    def set_reducer_func(self, reducer):
+        self.JobConfiguration.reducer_func = reducer
+        self.JobConfiguration.reducer_func_Ready = True
+
+    def set_filename(self, filename):
+        self.JobConfiguration.file_name = filename
+        self.JobConfiguration.file_name_Ready = True
 
 
 class JobConfiguration:
@@ -71,7 +81,7 @@ class JobConfiguration:
             
 
     
-    def ready(self):
+    def ready(self) -> bool:
         return self.file_name_Ready or self.mapper_func_Ready or self.reducer_func_Ready
         
 
