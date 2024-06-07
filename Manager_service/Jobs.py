@@ -1,30 +1,44 @@
+import json
 # Job information and logistics are hold here.
 # @TODO 
 # - should use a database
 
 
-job_id_counter = -1
-
 class Job:
     
-    def __init__(self, JobConfiguration) -> None:
-        self.JobConfiguration = JobConfiguration
-        self.job_id = str(job_id_counter)
-        
-        self.status = "pending"
-
-        job_id_counter += 1
-        
-    def __init__(self) -> None:
+    
+    def __init__(self):
         self.JobConfiguration = JobConfiguration()
-        self.job_id = str(job_id_counter)
+        self.jid = ""
         
-        self.status = "pending"
+        self.j_status = "pending"
+        self.created = ""
         
-        job_id_counter += 1
+
         
     def __repr__(self) -> str:
-        return
+        return f'jid: {self.jid}\n {self.JobConfiguration}'
+    
+    def to_json(self) -> str:
+        return json.dumps({
+            "jid": self.jid,
+            "j_status": self.j_status,
+            "created": self.created,
+            "JobConfiguration": {
+                "file_name": self.JobConfiguration.file_name,
+                "mapper_func": self.JobConfiguration.mapper_func,
+                "reducer_func": self.JobConfiguration.reducer_func,
+                "file_name_Ready": self.JobConfiguration.file_name_Ready,
+                "mapper_func_Ready": self.JobConfiguration.mapper_func_Ready,
+                "reducer_func_Ready": self.JobConfiguration.reducer_func_Ready
+            }
+        })
+    def init(self, jid, filename, mapper, reducer, created, status):
+        self.jid = jid
+        self.created = created
+        self.status = status
+        
+        self.setup_conf(mapper, reducer, filename)
         
     def setup_conf(self, mapper, reducer, filename):
         if mapper != "" and reducer != "" and filename != "":
@@ -64,16 +78,7 @@ class JobConfiguration:
         self.mapper_func_Ready = False
         self.reducer_func_Ready = False
         
-    
-    def __init__(self, filename):
-        self.file_name = filename
-        self.mapper_func = ""
-        self.reducer_func = ""
-        
-        self.file_name_Ready = False
-        self.mapper_func_Ready = False
-        self.reducer_func_Ready = False
-        
+
         
 
     def __repr__(self) -> str:

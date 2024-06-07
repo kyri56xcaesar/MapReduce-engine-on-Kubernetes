@@ -1,19 +1,17 @@
 import requests
 
-route = "setup"
-url = "http://localhost:5000/" + route
 
 # response = requests.get(url)
 
 
 # Paths to files
-MAPPER = './mapper_example.py'
-REDUCER = './reducer_example.py'
+MAPPER = 'examples/mapper_example.py'
+REDUCER = 'examples/reducer_example.py'
 
-FILENAME = "./word_count_data.txt"
+FILENAME = "examples/word_count_data.txt"
 
 files = {
-    'mapper' : (MAPPER, open(MAPPER), 'rb'),
+    'mapper' : (MAPPER, open(MAPPER), 'r'),
     'reducer' : (REDUCER, open(REDUCER), 'rb')
     
 }
@@ -22,9 +20,11 @@ data = {
     'filename' : FILENAME
 }
 
-cookie = {'jid': '0'}
 # send the post request
-response = requests.post(url, files=files,  cookies=cookie)
+r = requests.get("http://localhost:5000/check/5")
+print(r.text)
 
-print('Status code:', response.status_code)
-print('Response text:', response.text)
+
+# response = requests.post("http://localhost:5000/setup", files=files, data=data)
+# print('Status code:', response.status_code)
+# print('Response text:', response.text)

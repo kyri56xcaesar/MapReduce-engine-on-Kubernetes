@@ -1,5 +1,5 @@
 def reducer(entries):
-    
+
     accumulator = dict()
     
     for d in entries:

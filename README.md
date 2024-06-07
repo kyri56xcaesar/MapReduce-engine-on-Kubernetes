@@ -14,8 +14,10 @@
 
 ### Manager Service
 #### Workers are spawned and monitored by the Manager Service
+- [x] API set
+- [ ] Authorization control... (admin/user token)
 - [x] Job Configuring
-- [ ] Hold Jobs in a db
+- [x] Hold Jobs in a db
 - [ ] Job Submitting
 - [ ] Initialization, talk to cluster.
 

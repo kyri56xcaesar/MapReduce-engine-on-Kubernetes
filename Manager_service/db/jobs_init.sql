@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS jobs (
+    jid INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name TEXT DEFAULT "",
+    mapper_func TEXT DEFAULT "",
+    reducer_func TEXT DEFAULT "",
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    j_status CHAR(20) DEFAULT ""
+);
