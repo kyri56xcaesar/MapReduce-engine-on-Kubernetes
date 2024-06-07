@@ -1,8 +1,9 @@
 import sqlite3
 from datetime import datetime
 from os import path
-from Jobs import *
 from flask import current_app,g
+
+from Jobs import *
 
 def init_app(app, db_path):
     app.teardown_appcontext(close_db)

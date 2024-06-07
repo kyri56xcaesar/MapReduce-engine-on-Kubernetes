@@ -1,11 +1,11 @@
 import os
 from dotenv import load_dotenv
-from Jobs import *
-from utils import *
 from flask import *
 from kubernetes import client, config
-import db.database as db
 
+from Jobs import *
+from Utils import *
+import db.Database as db
 # This service should provide an REST api in order to setup an execution of a JOB
 #
 # And handle the execution of the job
@@ -14,7 +14,6 @@ import db.database as db
 #
 #
 
-load_dotenv()
 
 
 # API 
@@ -28,6 +27,7 @@ load_dotenv()
 #
 #
 
+load_dotenv()
 
 def create_app():
     
