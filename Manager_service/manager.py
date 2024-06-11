@@ -118,6 +118,15 @@ def configure_job():
         
         
 
+# When the job parameters are ready,
+# the following stuff need to be configured
+# Coordination!
+# input file should be read, and split
+# amount of workers should be estimated
+# 
+# assignment of map shuffle and reduce to the workers
+#
+# await results
 
 @app.route("/submit-job")
 def submit_job():
