@@ -2,4 +2,6 @@
 __pycache__
 UI_service/db
 Manager_service/db/jobs.sqlite
+Manager_service/kube/data
+Manager_service/examples/*.out
 test

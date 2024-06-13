@@ -6,7 +6,7 @@ RUN python3 -m pip install --upgrade pip
 # RUN pip install -r requirements.txt
 
 
-COPY {script_path} /{script_name}
+COPY mapper_example.py /mapper_example.py
 
 
-ENTRYPOINT ["python3", "/{script_name}"]
+ENTRYPOINT ["python3", "/mapper_example.py"]

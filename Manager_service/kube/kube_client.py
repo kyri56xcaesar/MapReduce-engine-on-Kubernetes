@@ -19,7 +19,8 @@ def main():
   #split_file("word_count_data.txt", 128)
   
   #prepare_py_mapper(mapper_file_path="../examples/mapper_example.py", input_data_path="../examples/word_count_data.txt", output_data_path="test.out")
-  prepare_py_reducer("../examples/reducer_example.py", "test.out", "out.out")
+  #prepare_py_reducer("../examples/reducer_example.py", "test.out", "out.out")
+  prepare_dockerfile("Dockerfile.mapper", "../examples/mapper_example.py")
   # check if chunks are created
   # for ch in range(no_mappers):
   #   print(os.path.exists(f"data/chunk_{ch}.txt"))
