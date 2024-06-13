@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+    name: mapper-job
+spec:
+    completions: {num_mappers}
+    parallelism: {num_mappers}
+    template:
+        spec:
+            containers:
+            - name: mapper
+              image: mapper-image
+              volumeMounts:
+              - mountPath: "/mnt/data"
+                name: mapreduce-storage
+              env:
+              - name: CHUNK_INDEX
+                value: "{{.task.index}}"
+              - name: CHUNK_SIZE
+                value: "{chunk_size}"
+            restartPolicy: OnFailure
+            volumes:
+            - name: mapreduce-storage
+              persistentVolumeClaim:
+                claimName: mapreduce-pvc

@@ -130,6 +130,17 @@ def configure_job():
 
 @app.route("/submit-job")
 def submit_job():
+    
+    data = open("examples/word_count_data.txt", "r")
+    content = data.readlines()
+    
+    split_data = content.split(" ")
+    
+    print(data)
+    print(split_data)
+    
+    
+    
     pass
 
 
