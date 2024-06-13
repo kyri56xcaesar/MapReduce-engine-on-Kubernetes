@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 # Utils for determening how big the data is
 # set a chuck size of a dataset file to be at 64 MB
@@ -15,7 +16,7 @@ def estimate_num_mappers(file_size, chunk_size=CHUNK_SIZE):
     return file_size // chunk_size + (1 if file_size % chunk_size > 0 else 0)
 
 # split a given file to chucks so that they can be used for different workers
-def split_file(file_path, chunk_size=64*1024*1024):
+def split_datafile(file_path, chunk_size=64*1024*1024):
     # check if the directory exists
     chunk_dir = os.path.join(os.getcwd(), 'data')
     os.makedirs(chunk_dir, exist_ok=True)
@@ -94,25 +95,17 @@ def prepare_dockerfile(dockerfile_name, py_source_path):
     
 
 
-def create_dockerFile(source_name, docker_name):
-    pass
-
-def docker_ize(python_source_file, ):
-    pass
 
 
 
-# import os
 
-# def create_dockerfile(script_name, script_content, dockerfile_name):
-#     with open(script_name, 'w') as script_file:
-#         script_file.write(script_content)
-    
-#     dockerfile_content = f"""
-#     FROM python:3.9-slim
-#     COPY {script_name} /{script_name}
-#     ENTRYPOINT ["python", "/{script_name}"]
-#     """
-    
-#     with open(dockerfile_name, 'w') as dockerfile:
-#         dockerfile.write(dockerfile_content)
+def docker_ize(dockerfile, image_name, path):
+    subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile, path])
+
+
+
+## Kubernetes
+
+def apply_manifest(manifest_path):
+  subprocess.run(["kubectl", "apply", "-f", manifest_path])
+
