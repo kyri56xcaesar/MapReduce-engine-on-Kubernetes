@@ -29,3 +29,12 @@
 ### Distributed Data Service
 #### Fault tolerance handling, can be Zookeeper or the K8S Built in features
 - [ ] K8S builting setup...
+
+
+
+
+
+# -> UI      :  Deployment
+# -> Auth:  StatefulService
+# -> Mngr: StatefulSet
+# -> Workers: Jobs or Replica Sets or Services

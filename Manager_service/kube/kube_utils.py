@@ -114,7 +114,17 @@ def docker_ize(dockerfile, image_name, path):
 
 
 ## Kubernetes
+def prepare_mapper_manifest():
+    pass
+
+def prepare_reducer_manfifest():
+    pass
+
+def prepare_master_manifest():
+    pass
+
+
+
 
 def apply_manifest(manifest_path):
   subprocess.run(["kubectl", "apply", "-f", manifest_path])
-
