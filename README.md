@@ -15,12 +15,11 @@
 ### Manager Service
 #### Workers are spawned and monitored by the Manager Service
 - [x] API set
-- [ ] Authorization control... (admin/user token)
 - [x] Job Configuring
 - [x] Hold Jobs in a db
 - [x] Formatting/setup
 - [ ] Initialization, talk to cluster.
-- [ ] Job Submitting
+- [ ] master/workers 
 
 ### Shared File System
 #### Basically K8S node/pod configurement (PVC: persistent volume claims etc)
