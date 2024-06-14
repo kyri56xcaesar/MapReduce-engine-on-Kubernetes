@@ -1,5 +1,14 @@
-import os
-import subprocess
+import os, subprocess
+
+
+# Bunch of utility functions and data for the kube_client
+# # worker plurality estimation
+# # template setup
+# # # source files setup
+# # # docker image setup
+# # manifests
+# # deployment
+
 
 # Utils for determening how big the data is
 # set a chuck size of a dataset file to be at 64 MB

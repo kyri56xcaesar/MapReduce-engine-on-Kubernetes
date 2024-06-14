@@ -18,8 +18,9 @@
 - [ ] Authorization control... (admin/user token)
 - [x] Job Configuring
 - [x] Hold Jobs in a db
-- [ ] Job Submitting
+- [x] Formatting/setup
 - [ ] Initialization, talk to cluster.
+- [ ] Job Submitting
 
 ### Shared File System
 #### Basically K8S node/pod configurement (PVC: persistent volume claims etc)

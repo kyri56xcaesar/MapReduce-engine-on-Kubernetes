@@ -4,7 +4,7 @@ from flask import *
 from kubernetes import client, config
 
 from Jobs import *
-from Utils import *
+from Manager_service.service_utils import *
 import db.Database as db
 # This service should provide an REST api in order to setup an execution of a JOB
 #
@@ -41,39 +41,40 @@ def create_app():
 
 app = create_app()
 
-# 
-@app.route("/health", methods=["GET"])
-def health():
-    
-    (_, status) = (db.check_db())
-
-    return {'status':status}
-
-
-@app.route("/check", methods=["GET"])
-@app.route("/check/", methods=["GET"])
-def check_all():
-    jids = db.get_all_jids()
-    return jsonify(jids)
-
-
-@app.route("/check/<jid>", methods=["GET"])
-def check_jid(jid):
-    
-    print(jid)
-    
-    job: Job = db.get_job_by_id(jid)
-    
-    if not job:
-        return jsonify({"status":"does't exist"})
-    
-    return job.to_json()
-
 
 # This path could be used for frontend demo
 @app.route("/")
 def main():
     return {"status" : "hello world"}
+
+
+
+
+# When the job parameters are ready,
+# the following stuff need to be configured
+# Coordination!
+# input file should be read, and split
+# amount of workers should be estimated
+# 
+# assignment of map shuffle and reduce to the workers
+#
+# await results
+
+@app.route("/submit-job")
+def submit_job():
+    
+    data = open("examples/word_count_data.txt", "r")
+    content = data.readlines()
+    
+    split_data = content.split(" ")
+    
+    print(data)
+    print(split_data)
+    
+    
+    
+    pass
+
 
 @app.route("/setup/", methods=["POST"])
 @app.route("/setup", methods=["POST"])
@@ -118,30 +119,6 @@ def configure_job():
         
         
 
-# When the job parameters are ready,
-# the following stuff need to be configured
-# Coordination!
-# input file should be read, and split
-# amount of workers should be estimated
-# 
-# assignment of map shuffle and reduce to the workers
-#
-# await results
-
-@app.route("/submit-job")
-def submit_job():
-    
-    data = open("examples/word_count_data.txt", "r")
-    content = data.readlines()
-    
-    split_data = content.split(" ")
-    
-    print(data)
-    print(split_data)
-    
-    
-    
-    pass
 
 
 # Edit a specific jid mapper
@@ -198,6 +175,34 @@ def setup_job_filename(jid='-1'):
     
     return jid_json_formatted_message(jid, "message", "filename not updated", 400)
 
+
+# 
+@app.route("/health", methods=["GET"])
+def health():
+    
+    (_, status) = (db.check_db())
+
+    return {'status':status}
+
+
+@app.route("/check", methods=["GET"])
+@app.route("/check/", methods=["GET"])
+def check_all():
+    jids = db.get_all_jids()
+    return jsonify(jids)
+
+
+@app.route("/check/<jid>", methods=["GET"])
+def check_jid(jid):
+    
+    print(jid)
+    
+    job: Job = db.get_job_by_id(jid)
+    
+    if not job:
+        return jsonify({"status":"does't exist"})
+    
+    return job.to_json()
 
 
 
