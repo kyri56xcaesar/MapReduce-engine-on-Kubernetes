@@ -1,7 +1,9 @@
-*/__pycache__
-__pycache__
-UI_service/db
+Auth_service/app/db/
+
 Manager_service/db/jobs.sqlite
 Manager_service/kube/data
 Manager_service/examples/*.out
+
+__pycache__
 test
+todo

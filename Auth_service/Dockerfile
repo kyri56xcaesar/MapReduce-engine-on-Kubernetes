@@ -5,6 +5,6 @@ COPY ./app /app
 
 RUN pip install -r ./requirements.txt
 
-EXPOSE 1338
+EXPOSE 1337
 
 CMD ["python3", "server.py"]

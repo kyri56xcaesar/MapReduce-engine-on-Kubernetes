@@ -2,15 +2,35 @@
 
 ## To-do
 
-### User Interface Service ✓
-- [x] Basic functionality
-- [x] Sessions
-- [x] Database
-- [ ] Admin Panel
-- [ ] Job posting
+### User Interface
 
-#### Authentication attached to UI
-- [x] Basic functionality attached
+#### Auth Service
+- [x] Separated from UI service
+- [x] Authentication
+- [x] Database
+- [x] Token (JWT) issuing
+- [x] Generate RSA keys
+- [x] Expose public key
+- [x] Implement admin commands
+
+#### UI Service
+- [x] Redesigned completely
+- [x] Command interface
+- [x] Get public key from Auth service
+- [x] Token verification with RSA256
+- [x] Privilege verification
+- [ ] Implement roles in JWT payload
+
+#### Client script
+- [x] Redesigned accordingly
+- [x] Implemented as a CLI tool
+- [x] Accepts modes/options
+- [ ] Implement job submit/view
+
+#### General
+- [ ] Organize/clean code
+- [ ] Testing/Fuzzing
+- [ ] Set up in pods
 
 ### Manager Service
 #### Workers are spawned and monitored by the Manager Service
