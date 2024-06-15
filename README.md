@@ -39,6 +39,7 @@
 - [x] Hold Jobs in a db
 - [x] Formatting/setup
 - [ ] Initialization, talk to cluster.
+- [ ] Instantiate images on kubernetes and then apply logic to dynamically change inp/out
 - [ ] master/workers 
 
 ### Shared File System

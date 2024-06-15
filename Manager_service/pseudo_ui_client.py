@@ -5,8 +5,8 @@ import requests
 
 
 # Paths to files
-MAPPER = 'examples/mapper_example.py'
-REDUCER = 'examples/reducer_example.py'
+MAPPER = 'skeletons/mapper_skeleton.py'
+REDUCER = 'skeletons/reducer_skeleton.py'
 
 FILENAME = "examples/word_count_data.txt"
 

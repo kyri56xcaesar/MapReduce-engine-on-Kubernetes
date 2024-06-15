@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shufflers
+  labels:
+    app: shufflers
+spec:
+  ports:
+    - port: 8080
+      name: shuffler
+  clusterIP: None
+  selector:
+    app: shufflers
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: shuffler
+spec:
+  serviceName: "shufflers"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shufflers
+  template:
+    metadata:
+      labels:
+        app: shufflers
+    spec:
+      containers:
+        - name: mapreduce
+          imagePullPolicy: IfNotPresent
+          image: shuffler:latest
+          command: ["python3"]
+          args: ["/shuffler.py", "-i", "/mnt/data/shuffler/in/mapper.out", "-o", "/mnt/data/reducer/in/shuffler.out"]
+          ports:
+            - containerPort: 8081
+              name: shuffler
+          volumeMounts:
+            - mountPath: "/mnt/data/"
+              name: mapper-storage
+      volumes:
+      - name: mapper-storage
+        persistentVolumeClaim:
+          claimName: keep-alive-pod-pvc

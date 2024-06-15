@@ -1,17 +1,3 @@
 FROM python:3.9
 
-RUN python3 -m pip install --upgrade pip 
-
-# COPY /templates/requirements.txt ./
-# RUN pip install -r requirements.txt
-
-# RUN mkdir ./data
-# copy input/output paths?
-# COPY {input_path} ./data/input_path
-# COPY {output_path} ./data/output_path
-
-
-COPY {script_path} /{script_name}
-
-
-ENTRYPOINT ["python3", "/{script_name}"]
+COPY {skeleton_script_path} /{skeleton_script}

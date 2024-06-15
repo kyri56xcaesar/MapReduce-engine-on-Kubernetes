@@ -1,20 +1,15 @@
-def mapper(arr):
-
-    return [(word, 1) for word in arr]
-
-
-
-
 
 if __name__ == "__main__":
 
-    import argparse    
+    import argparse
+    from mapper_input import mapper
 
     parser = argparse.ArgumentParser(description="Process input and output paths")
     parser.add_argument('-i', '--input', type=str, default="word_count_data.txt", help='Input data file path')
     parser.add_argument('-o', '--output', type=str, default="mapper.out", help='Output data file path')
     args = parser.parse_args()
     
+    # Should be changed
     input_data_path = args.input
     output_data_path = args.output
 
@@ -40,3 +35,5 @@ if __name__ == "__main__":
                         out.write(f'("{item[0]}", {item[1]}),\n\t')
                 
             out.write("\n]")
+
+

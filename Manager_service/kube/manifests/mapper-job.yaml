@@ -6,8 +6,8 @@ metadata:
     app: mappers
 spec:
   ports:
-  - port: 8080
-    name: mapper
+    - port: 8080
+      name: mapper
   clusterIP: None
   selector:
     app: mappers
@@ -18,7 +18,7 @@ metadata:
   name: mapper
 spec:
   serviceName: "mappers"
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: mappers
@@ -28,11 +28,19 @@ spec:
         app: mappers
     spec:
       containers:
-      - name: mapreduce
-        image: temakozyrev/mapreduce:latest
-        ports:
-        - containerPort: 8080
-          name: mapper
-        env:
-        - name: TYPE
-          value: "MAP"
+        - name: mapreduce
+          imagePullPolicy: IfNotPresent
+          image: mapper:latest
+          command: ["sh", "-c", "cp /mnt/data/mapper_input.py /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/mapper/in/mapper.in -o /mnt/data/shuffler/in/mapper.out"]
+          #command: ["python3"]
+          #args: ["/mapper_skeleton.py", "-i", "/mnt/data/mapper/in/mapper.in", "-o", "/mnt/data/shuffler/in/mapper.out"]
+          ports:
+            - containerPort: 8080
+              name: mapper
+          volumeMounts:
+            - mountPath: "/mnt/data/"
+              name: mapper-storage
+      volumes:
+      - name: mapper-storage
+        persistentVolumeClaim:
+          claimName: keep-alive-pod-pvc

@@ -4,7 +4,10 @@ from flask import *
 from kubernetes import client, config
 
 from Jobs import *
-from Manager_service.service_utils import *
+import kube.kube_client
+import kube.kube_utils
+from service_utils import *
+import kube
 import db.Database as db
 # This service should provide an REST api in order to setup an execution of a JOB
 #
@@ -26,8 +29,8 @@ import db.Database as db
 # /check/id  -> check job id status
 #
 #
-
 load_dotenv()
+
 
 def create_app():
     
@@ -40,7 +43,6 @@ def create_app():
     return app
 
 app = create_app()
-
 
 # This path could be used for frontend demo
 @app.route("/")
@@ -206,7 +208,9 @@ def check_jid(jid):
 
 
 
-PORT = os.environ['SERVICE_PORT']
 if __name__ == "__main__":
+
+    #kube.kube_client.init_images()
     
+    PORT = os.environ['SERVICE_PORT']
     app.run(host='0.0.0.0', port=PORT, debug=False)

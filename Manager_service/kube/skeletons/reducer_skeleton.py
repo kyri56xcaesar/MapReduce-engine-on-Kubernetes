@@ -1,28 +1,13 @@
-def reducer(entries):
-
-    accumulator = dict()
-    
-    for key, value in entries.items():
-        if key in accumulator:
-            accumulator[key] += sum(value)
-        else:
-            accumulator[key] = sum(value)
-    
-    return accumulator
-
-
-
-
-
 
 if __name__ == "__main__":
     
     import json
-    import argparse    
+    import argparse
+    from reducer_input import reducer 
 
     parser = argparse.ArgumentParser(description="Process input and output paths")
-    parser.add_argument('-i', '--input', type=str, default="test.out", help='Input data file path')
-    parser.add_argument('-o', '--output', type=str, default="out.out", help='Output data file path')
+    parser.add_argument('-i', '--input', type=str, default="shuffler.out", help='Input data file path')
+    parser.add_argument('-o', '--output', type=str, default="reducer.out", help='Output data file path')
     args = parser.parse_args()
     
     input_data_path = args.input

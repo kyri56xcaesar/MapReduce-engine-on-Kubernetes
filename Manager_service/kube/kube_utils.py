@@ -12,8 +12,8 @@ import os, subprocess
 
 # Utils for determening how big the data is
 # set a chuck size of a dataset file to be at 64 MB
-#CHUNK_SIZE = 54 * 1024 * 1024 # 64 MB
-CHUNK_SIZE = 128 # 128 bytes for testing
+CHUNK_SIZE = 128 * 1024 * 1024 # 64 MB
+#CHUNK_SIZE = 128 # 128 bytes for testing
 
 
 # return the size of a file in bytes
@@ -62,9 +62,49 @@ MAPPER_TEMPLATE_PATH = "templates/py_mappersource_extention.template"
 REDUCER_TEMPLATE_PATH = "templates/py_reducersource_extention.template"
 DOCKERFILE_TEMPLATE_PATH = "templates/Dockerfile.py.template"
 
-def prepare_py_mapper(mapper_file_path="examples/mapper_example.py", input_data_path ="", output_data_path=""):
+
+def docker_ize(dockerfile_name, image_name, py_skeleton_path, curr_path):
     
+    dockerfile_template = DOCKERFILE_TEMPLATE_PATH
     
+    with open(dockerfile_template, 'r') as template:
+        
+        script = py_skeleton_path.split("/")[-1]
+        
+        content = template.read()
+        
+        formatted_content = content.format(skeleton_script_path=py_skeleton_path, skeleton_script=script)
+        
+        with open(dockerfile_name, 'w') as f_out:
+            f_out.write(formatted_content)
+    
+
+
+    subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile_name, curr_path])
+
+def remove_images(image_name):
+    subprocess.run(["docker", "rmi", image_name])
+
+def load_images_to_minikube():
+    subprocess.run(["minikube", "image", "load", "mapper"])
+    subprocess.run(["minikube", "image", "load", "reducer"])
+    subprocess.run(["minikube", "image", "load", "shuffler"])
+
+    
+def remove_images_from_minikube():
+    subprocess.run(["minikube", "image", "rm", "mapper"])
+    subprocess.run(["minikube", "image", "rm", "reducer"])
+    subprocess.run(["minikube", "image", "rm", "shuffler"])
+
+    
+def attach_source_to_pod(pod_name_path, source_path):
+    subprocess.run(["kubectl", "cp", source_path, pod_name_path])
+
+
+
+# lowkey deprecated functions...
+def prepare_py_mapper(mapper_file_path, input_data_path, output_data_path):
+
     mapper_additions_path = MAPPER_TEMPLATE_PATH
     mapper_additions = ""
     with open(mapper_additions_path, 'r') as f:
@@ -75,9 +115,8 @@ def prepare_py_mapper(mapper_file_path="examples/mapper_example.py", input_data_
         with open(mapper_file_path, 'a') as mapper_file:
             mapper_file.write(formatted_mapper)
 
-def prepare_py_reducer(reducer_file_path="examples/reducer_example.py", input_data_path ="", output_data_path=""):
-    
-    
+def prepare_py_reducer(reducer_file_path, input_data_path, output_data_path):
+
     reducer_additions_path = REDUCER_TEMPLATE_PATH
     reducer_additions = ""
     with open(reducer_additions_path, 'r') as f:
@@ -88,43 +127,4 @@ def prepare_py_reducer(reducer_file_path="examples/reducer_example.py", input_da
         with open(reducer_file_path, 'a') as reducer_file:
             reducer_file.write(formatted_reducer)       
 
-def prepare_dockerfile(dockerfile_name, py_source_path):
-    
-    dockerfile_template = DOCKERFILE_TEMPLATE_PATH
-    script_file = py_source_path.split("/")[-1]
-    
-    with open(dockerfile_template, 'r') as template:
-        
-        content = template.read()
-        
-        formatted_content = content.format(script_path=py_source_path, script_name=script_file)
-        
-        with open(dockerfile_name, 'w') as f_out:
-            f_out.write(formatted_content)
-    
 
-
-
-
-
-
-def docker_ize(dockerfile, image_name, path):
-    subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile, path])
-
-
-
-## Kubernetes
-def prepare_mapper_manifest():
-    pass
-
-def prepare_reducer_manfifest():
-    pass
-
-def prepare_master_manifest():
-    pass
-
-
-
-
-def apply_manifest(manifest_path):
-  subprocess.run(["kubectl", "apply", "-f", manifest_path])

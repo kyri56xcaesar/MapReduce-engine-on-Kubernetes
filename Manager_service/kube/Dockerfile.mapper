@@ -1,0 +1,3 @@
+FROM python:3.9
+
+COPY skeletons/mapper_skeleton.py /mapper_skeleton.py

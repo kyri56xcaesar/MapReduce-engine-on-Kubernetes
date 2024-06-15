@@ -6,8 +6,8 @@ metadata:
     app: reducers
 spec:
   ports:
-  - port: 8080
-    name: reducer
+    - port: 8080
+      name: reducer
   clusterIP: None
   selector:
     app: reducers
@@ -18,7 +18,7 @@ metadata:
   name: reducer
 spec:
   serviceName: "reducers"
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: reducers
@@ -28,11 +28,19 @@ spec:
         app: reducers
     spec:
       containers:
-      - name: mapreduce
-        image: temakozyrev/mapreduce:latest
-        ports:
-        - containerPort: 8080
-          name: reducer
-        env:
-        - name: TYPE
-          value: "REDUCE"
+        - name: mapreduce
+          imagePullPolicy: IfNotPresent
+          image: reducer:latest
+          command: ["sh", "-c", "cp /mnt/data/reducer_input.py /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/reducer/in/shuffler.out -o /mnt/data/reducer/out/reducer.out"]
+          #command: ["python3"]
+          #args: ["/reducer.py", "-i", "/mnt/data/reducer/in/shuffler.out", "-o", "/mnt/data/reducer/out/reducer.out"]
+          ports:
+            - containerPort: 8082
+              name: reducer
+          volumeMounts:
+            - mountPath: "/mnt/data/"
+              name: mapper-storage
+      volumes:
+      - name: mapper-storage
+        persistentVolumeClaim:
+          claimName: keep-alive-pod-pvc

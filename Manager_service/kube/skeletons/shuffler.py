@@ -22,7 +22,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Process input and output paths")
     parser.add_argument('-i', '--input', type=str, default='mapper.out', help='Input data file path')
-    parser.add_argument('-o', '--output', type=str, default='test.out', help='Output data file path')
+    parser.add_argument('-o', '--output', type=str, default='shuffler.out', help='Output data file path')
     args = parser.parse_args()
     
     input_data_path = args.input
