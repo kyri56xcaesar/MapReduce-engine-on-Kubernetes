@@ -38,9 +38,12 @@
 - [x] Job Configuring
 - [x] Hold Jobs in a db
 - [x] Formatting/setup
-- [ ] Initialization, talk to cluster.
-- [ ] Instantiate images on kubernetes and then apply logic to dynamically change inp/out
-- [ ] master/workers 
+- [x] Initialization, talk to cluster.
+- [x] Instantiate images on kubernetes and then apply logic to dynamically change inp/out
+- [x] master/workers 
+- [ ] decide/reasses kind of manifests
+- [ ] automate process
+- [ ] provide access for Job status view
 
 ### Shared File System
 #### Basically K8S node/pod configurement (PVC: persistent volume claims etc)
