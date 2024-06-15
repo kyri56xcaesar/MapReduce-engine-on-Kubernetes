@@ -1,5 +1,3 @@
-Auth_service/app/db/users.db
-
 Manager_service/db/jobs.sqlite
 Manager_service/kube/data
 Manager_service/examples/*.out
