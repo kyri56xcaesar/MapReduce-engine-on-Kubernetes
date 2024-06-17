@@ -1,46 +1,48 @@
-apiVersion: v1
-kind: Service
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: reducers
-  labels:
-    app: reducers
+  name: reducer-job
 spec:
-  ports:
-    - port: 8080
-      name: reducer
-  clusterIP: None
-  selector:
-    app: reducers
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: reducer
-spec:
-  serviceName: "reducers"
-  replicas: 1
-  selector:
-    matchLabels:
-      app: reducers
+  completions: 1
+  parallelism: 1
+  completionMode: Indexed
   template:
     metadata:
-      labels:
+      labels:  # Fixed typo here
         app: reducers
     spec:
       containers:
         - name: mapreduce
-          imagePullPolicy: IfNotPresent
           image: reducer:latest
-          command: ["sh", "-c", "cp /mnt/data/reducer_input.py /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/reducer/in/shuffler.out -o /mnt/data/reducer/out/reducer.out"]
-          #command: ["python3"]
-          #args: ["/reducer.py", "-i", "/mnt/data/reducer/in/shuffler.out", "-o", "/mnt/data/reducer/out/reducer.out"]
+          imagePullPolicy: IfNotPresent
+          command:
+            [
+              "sh", "-c",
+              'echo "${MYFUNC}" > /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/reducer/in/mapper-${JOB_INDEX}.out -o /mnt/data/reducer/out/reducer-${JOB_INDEX}.out'
+            ]
           ports:
-            - containerPort: 8082
-              name: reducer
+          - containerPort: 8081
+            name: reducer
           volumeMounts:
-            - mountPath: "/mnt/data/"
-              name: mapper-storage
+          - mountPath: "/mnt/data/"
+            name: reducer-storage  # Fixed name here
+          env:
+          - name: JOB_INDEX
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+          - name: MYFUNC
+            value: |
+              def reducer(entries):
+                accumulator = dict()
+                for key, value in entries.items():
+                  if key in accumulator:
+                    accumulator[key] += sum(value)
+                  else:
+                    accumulator[key] = sum(value)
+                return accumulator
+      restartPolicy: OnFailure
       volumes:
-      - name: mapper-storage
+      - name: reducer-storage  # Fixed name here
         persistentVolumeClaim:
           claimName: keep-alive-pod-pvc

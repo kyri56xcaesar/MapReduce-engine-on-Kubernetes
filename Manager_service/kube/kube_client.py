@@ -1,12 +1,12 @@
 import yaml
-import time
 from kube_utils import *
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from kubernetes.stream import stream
+from kubernetes import client, config
+from kubernetes.client import V1EnvVar, V1ObjectMeta, V1PodSpec, V1PodTemplateSpec, V1VolumeMount, V1Volume, V1PersistentVolumeClaimVolumeSource
+from kubernetes.client import V1Container, V1JobSpec, V1Job
 
-# load config
-config.load_kube_config()
 
 
 def init_images():
@@ -17,148 +17,183 @@ def init_images():
   load_images_to_minikube()
 
 
-def apply_sfs_manifest(yaml_file):
-    # Load in-cluster config
-    config.load_incluster_config()
-    # Use this if running outside of the cluster
-    # config.load_kube_config()
-
-    # Read the YAML file
-    with open(yaml_file, 'r') as f:
-        manifest = list(yaml.safe_load_all(f))
-
-    # Apply each resource in the manifest
-    for resource in manifest:
-        kind = resource.get('kind')
-        if kind == 'PersistentVolume':
-            try:
-                client.CoreV1Api().create_persistent_volume(body=resource)
-                print("PersistentVolume created successfully.")
-            except ApiException as e:
-                if e.status == 409:
-                    print("PersistentVolume already exists. Skipping creation.")
-                else:
-                    print("Exception when creating PersistentVolume: %s\n" % e)
-
-        elif kind == 'PersistentVolumeClaim':
-            try:
-                client.CoreV1Api().create_namespaced_persistent_volume_claim(namespace='default', body=resource)
-                print("PersistentVolumeClaim created successfully.")
-            except ApiException as e:
-                if e.status == 409:
-                    print("PersistentVolumeClaim already exists. Skipping creation.")
-                else:
-                    print("Exception when creating PersistentVolumeClaim: %s\n" % e)
-
-        elif kind == 'Pod':
-            try:
-                client.CoreV1Api().create_namespaced_pod(namespace='default', body=resource)
-                print("Pod created successfully.")
-            except ApiException as e:
-                if e.status == 409:
-                    print("Pod already exists. Skipping creation.")
-                else:
-                    print("Exception when creating Pod: %s\n" % e)
-
-
-def apply_k8s_worker_manifest(manifest: str):
-    # Load Kubernetes configuration
+def create_and_apply_mapper_Job_manifest(myfunc, no_mappers):
+    # Load kube config
     config.load_kube_config()
 
-    # Parse the manifest
-    k8s_objects = yaml.safe_load_all(manifest)
+    #if no_mappers < 0 or no_mappers > 10:
+    #    return
 
-    # Initialize the API clients
-    v1 = client.CoreV1Api()
-    apps_v1 = client.AppsV1Api()
+   # Create the Job object
+    job = client.V1Job(
+        api_version="batch/v1",
+        kind="Job",
+        metadata=client.V1ObjectMeta(name="mapper-job"),
+        spec=client.V1JobSpec(
+            completions=no_mappers,  # Total number of mapper jobs to complete
+            parallelism=no_mappers,  # Number of mapper jobs to run in parallel
+            completion_mode="Indexed",
+            template=client.V1PodTemplateSpec(
+                metadata=client.V1ObjectMeta(labels={"app": "mappers"}),
+                spec=client.V1PodSpec(
+                    containers=[
+                        client.V1Container(
+                            name="mapreduce",
+                            image="mapper:latest",
+                            image_pull_policy="IfNotPresent",
+                            command=[
+                                "sh", "-c",
+                                'echo "${MYFUNC}" > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/mapper/in/mapper-${JOB_INDEX}.in -o /mnt/data/shuffler/in/mapper-${JOB_INDEX}.out'
+                            ],
+                            ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
+                            volume_mounts=[
+                                client.V1VolumeMount(
+                                    mount_path="/mnt/data/",
+                                    name="mapper-storage"
+                                )
+                            ],
+                            env=[
+                                V1EnvVar(
+                                    name="JOB_INDEX",
+                                    value_from=client.V1EnvVarSource(
+                                        field_ref=client.V1ObjectFieldSelector(field_path='metadata.annotations["batch.kubernetes.io/job-completion-index"]')
+                                    )
+                                ),
+                                V1EnvVar(
+                                    name="MYFUNC",
+                                    value=myfunc
+                                )
+                            ]
+                        )
+                    ],
+                    restart_policy="OnFailure",
+                    volumes=[
+                        client.V1Volume(
+                            name="mapper-storage",
+                            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
+                                claim_name="keep-alive-pod-pvc"
+                            )
+                        )
+                    ]
+                )
+            )
+        )
+    )
 
-    # Apply each object in the manifest
-    for obj in k8s_objects:
-        kind = obj.get('kind')
-        if kind == 'Service':
-            try:
-                v1.create_namespaced_service(namespace='default', body=obj)
-                print(f"Service '{obj['metadata']['name']}' created successfully.")
-            except ApiException as e:
-                if e.status == 409:
-                    v1.replace_namespaced_service(name=obj['metadata']['name'], namespace='default', body=obj)
-                    print(f"Service '{obj['metadata']['name']}' updated successfully.")
-                else:
-                    print(f"Failed to create or update Service: {e}")
-
-        elif kind == 'StatefulSet':
-            try:
-                apps_v1.create_namespaced_stateful_set(namespace='default', body=obj)
-                print(f"StatefulSet '{obj['metadata']['name']}' created successfully.")
-            except ApiException as e:
-                if e.status == 409:
-                    apps_v1.replace_namespaced_stateful_set(name=obj['metadata']['name'], namespace='default', body=obj)
-                    print(f"StatefulSet '{obj['metadata']['name']}' updated successfully.")
-                else:
-                    print(f"Failed to create or update StatefulSet: {e}")
+    # Create the job in the Kubernetes cluster
+    api_instance = client.BatchV1Api()
+    api_response = api_instance.create_namespaced_job(
+        body=job,
+        namespace="default"
+    )
+    print("Job created. status='%s'" % str(api_response.status))
 
 
-def wait_for_pod(pod_name, namespace='default', timeout=300):
-    v1 = client.CoreV1Api()
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        try:
-            pod = v1.read_namespaced_pod(name=pod_name, namespace=namespace)
-            if pod.status.phase == 'Running':
-                print(f"Pod {pod_name} is running.")
-                return True
-        except ApiException as e:
-            print(f"Exception when reading pod status: {e}")
-        time.sleep(5)
-    print(f"Timeout waiting for pod {pod_name} to be running.")
-    return False
+def create_and_apply_reducer_Job_manifest(myfunc, no_mapper):
+    
+    config.load_kube_config()
+    
+    # Create the Job object
+    job = client.V1Job(
+        api_version="batch/v1",
+        kind="Job",
+        metadata=client.V1ObjectMeta(name="reducer-job"),
+        spec=client.V1JobSpec(
+            completions=no_mapper,  # Total number of reducer jobs to complete
+            parallelism=no_mapper,  # Number of reducer jobs to run in parallel
+            completion_mode="Indexed",
+            template=client.V1PodTemplateSpec(
+                metadata=client.V1ObjectMeta(labels={"app": "reducers"}),
+                spec=client.V1PodSpec(
+                    containers=[
+                        client.V1Container(
+                            name="mapreduce",
+                            image="reducer:latest",
+                            image_pull_policy="IfNotPresent",
+                            command=[
+                                "sh", "-c",
+                                'echo "${MYFUNC}" > /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/reducer/in/mapper-${JOB_INDEX}.out -o /mnt/data/reducer/out/reducer-${JOB_INDEX}.out'
+                            ],
+                            ports=[client.V1ContainerPort(container_port=8081, name="reducer")],
+                            volume_mounts=[
+                                client.V1VolumeMount(
+                                    mount_path="/mnt/data/",
+                                    name="reducer-storage"
+                                )
+                            ],
+                            env=[
+                                V1EnvVar(
+                                    name="JOB_INDEX",
+                                    value_from=client.V1EnvVarSource(
+                                        field_ref=client.V1ObjectFieldSelector(field_path='metadata.annotations["batch.kubernetes.io/job-completion-index"]')
+                                    )
+                                ),
+                                V1EnvVar(
+                                    name="MYFUNC",
+                                    value=myfunc
+                                )
+                            ]
+                        )
+                    ],
+                    restart_policy="OnFailure",
+                    volumes=[
+                        client.V1Volume(
+                            name="reducer-storage",
+                            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
+                                claim_name="keep-alive-pod-pvc"
+                            )
+                        )
+                    ]
+                )
+            )
+        )
+    )
 
-def setup_data():
-  
-  # need to copy data to the persistent volume
-  # insert the user functions
-  pass
-  
-  
+    # Create the job in the Kubernetes cluster
+    api_instance = client.BatchV1Api()
+    api_response = api_instance.create_namespaced_job(
+        body=job,
+        namespace="default"
+    )
+
+
 
 
 def main():
-  filepath = "examples/word_count_data.txt"
-  fsize = get_file_size(filepath)
-  no_workers = estimate_num_mappers(fsize)
+    
+    filepath = "examples/word_count_data.txt"
+    fsize = get_file_size(filepath)
+    no_workers = estimate_num_mappers(fsize)
   
-  print(f'File size: {fsize}')
-  print(f'# workers: {no_workers}')
+    print(f'File size: {fsize}')
+    print(f'# workers: {no_workers}')
   
+    
+    # This should split the files in the /mnt path
+    split_datafile(filepath)
+      
+    mapper_func = """
+    def reducer(entries):
+      accumulator = dict()
+      for key, value in entries.items():
+          if key in accumulator:
+              accumulator[key] += sum(value)
+          else:
+              accumulator[key] = sum(value)
+      return accumulator
+    """
+    reducer_func = """
+      def mapper(arr):
+          return [(word, 1) for word in arr]
+    """
   
-  
-  
-  
-  
-  #split_datafile("examples/word_count_data.txt", 128)
-  
-  # check if chunks are created
-  # for ch in range(no_mappers):
-  #   print(os.path.exists(f"data/chunk_{ch}.txt"))
-  
-  #prepare_py_mapper(mapper_file_path="examples/mapper_skeleton.py", input_data_path="examples/word_count_data.txt", output_data_path="mapper.out")
-  #prepare_dockerfile("Dockerfile.mapper", "examples/mapper_skeleton.py")
-  
-  #prepare_py_reducer("/examples/reducer_example.py", "test.out", "out.out")
-  
-  
-  # USE KUBERNETES PY CLIENT for manifest setup and application
-  
-  
-  return 0
-  
- 
-  
+    # USE KUBERNETES PY CLIENT for manifest setup and application
+    create_and_apply_mapper_Job_manifest(mapper_func, no_workers)
+    create_and_apply_reducer_Job_manifest(reducer_func, 1)
+    
+    return 0
   
 
 main()
-
-
-
 
 

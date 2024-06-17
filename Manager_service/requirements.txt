@@ -2,6 +2,5 @@ flask
 dotenv
 sqlite3
 requests
-json
 datetime
 kubernetes

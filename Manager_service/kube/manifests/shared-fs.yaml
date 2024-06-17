@@ -26,6 +26,13 @@ kind: Pod
 metadata:
   name: keep-alive-pod
 spec:
+  initContainers:
+  - name: init-container
+    image: busybox:1.32
+    command: ["sh", "-c", "mkdir -p /mnt/data/mapper/in /mnt/data/reducer/in /mnt/data/reducer/out"]
+    volumeMounts:
+    - mountPath: "/mnt/data"
+      name: mapper-storage
   containers:
   - name: keep-alive-container
     image: busybox:1.32

@@ -1,36 +1,36 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: shufflers
+  name: manager
   labels:
-    app: shufflers
+    app: managers
 spec:
   ports:
-    - port: 8080
-      name: shuffler
+    - port: 8070
+      name: manager
   clusterIP: None
   selector:
-    app: shufflers
+    app: managers
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: shuffler
+  name: manager
 spec:
-  serviceName: "shufflers"
+  serviceName: "managers"
   replicas: 1
   selector:
     matchLabels:
-      app: shufflers
+      app: managers
   template:
     metadata:
       labels:
-        app: shufflers
+        app: managers
     spec:
       containers:
         - name: mapreduce
           imagePullPolicy: IfNotPresent
-          image: shuffler:latest
+          image: manager:latest
           command: ["python3"]
           args: ["/shuffler.py", "-i", "/mnt/data/shuffler/in/mapper.out", "-o", "/mnt/data/reducer/in/shuffler.out"]
           ports:

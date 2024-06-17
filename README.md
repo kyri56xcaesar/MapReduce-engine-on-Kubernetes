@@ -61,4 +61,4 @@
 # -> UI      :  Deployment
 # -> Auth:  StatefulService
 # -> Mngr: StatefulSet
-# -> Workers: Jobs or Replica Sets or Services
+# -> Workers: Jobs 

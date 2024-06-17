@@ -13,10 +13,6 @@ import db.Database as db
 #
 # And handle the execution of the job
 #
-#
-#
-#
-
 
 
 # API 

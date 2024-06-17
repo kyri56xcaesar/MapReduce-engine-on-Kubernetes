@@ -1,7 +1,21 @@
+def shuffler(arr):
+    
+    shuffled = dict()
+    
+    for element in arr:
+        
+        if element[0] not in shuffled:
+            shuffled[element[0]] = [element[1]]
+        else:
+            shuffled[element[0]].append(element[1])
+    
+    return shuffled          
+
 
 if __name__ == "__main__":
 
     import argparse
+    import json
     from mapper_input import mapper
 
     parser = argparse.ArgumentParser(description="Process input and output paths")
@@ -15,25 +29,18 @@ if __name__ == "__main__":
 
     with open(input_data_path, 'r') as inp:
         lines = inp.readlines()
-        
-        rows = len(lines)
-        
-        with open(output_data_path, 'w') as out:
+        mapped_lines = []
 
-            out.write("[\n\t")
-
-            rows = len(lines)
-            for j, line in enumerate(lines):
-                line = line.strip()
-                res = mapper(line.split(" "))
+        
+        for j, line in enumerate(lines):
+            line = line.strip()
+            res = mapper(line.split(" "))
+            mapped_lines.append(res)
             
-                cols = len(res)
-                for i, item in enumerate(res):
-                    if j == rows - 1 and i == cols - 1:
-                        out.write(f'("{item[0]}", {item[1]})')
-                    else:
-                        out.write(f'("{item[0]}", {item[1]}),\n\t')
-                
-            out.write("\n]")
+        # flatten data inside and shuffler them 
+        shuffled_data = shuffler([item for sublist in mapped_lines for item in sublist])
 
+        with open(output_data_path, 'w') as out:
+            json.dump(shuffled_data, out, indent=4, ensure_ascii=False)
 
+        

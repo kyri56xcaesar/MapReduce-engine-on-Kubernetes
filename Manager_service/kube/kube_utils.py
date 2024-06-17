@@ -12,8 +12,8 @@ import os, subprocess
 
 # Utils for determening how big the data is
 # set a chuck size of a dataset file to be at 64 MB
-CHUNK_SIZE = 128 * 1024 * 1024 # 64 MB
-#CHUNK_SIZE = 128 # 128 bytes for testing
+#CHUNK_SIZE = 128 * 1024 * 1024 # 64 MB
+CHUNK_SIZE = 128 # 128 bytes for testing
 
 
 # return the size of a file in bytes
@@ -25,7 +25,7 @@ def estimate_num_mappers(file_size, chunk_size=CHUNK_SIZE):
     return file_size // chunk_size + (1 if file_size % chunk_size > 0 else 0)
 
 # split a given file to chucks so that they can be used for different workers
-def split_datafile(file_path, chunk_size=64*1024*1024):
+def split_datafile(file_path, chunk_size=CHUNK_SIZE):
     # check if the directory exists
     chunk_dir = os.path.join(os.getcwd(), 'data')
     os.makedirs(chunk_dir, exist_ok=True)
@@ -42,7 +42,7 @@ def split_datafile(file_path, chunk_size=64*1024*1024):
         chunk.append(line)
         chunk_size_current += len(line.encode('utf-8'))
         if chunk_size_current >= chunk_size:
-            chunk_file_path = os.path.join(chunk_dir, f'chunk_{chunk_index}.txt')
+            chunk_file_path = os.path.join(chunk_dir, f'mapper-{chunk_index}.in')
             with open(chunk_file_path, 'w') as chunk_file:
                 chunk_file.writelines(chunk)
             chunk = []
@@ -50,7 +50,7 @@ def split_datafile(file_path, chunk_size=64*1024*1024):
             chunk_index += 1
     
     if chunk:
-        chunk_file_path = os.path.join(chunk_dir, f'chunk_{chunk_index}.txt')
+        chunk_file_path = os.path.join(chunk_dir, f'mapper-{chunk_index}.in')
         with open(chunk_file_path, 'w') as chunk_file:
             chunk_file.writelines(chunk)
 
@@ -87,7 +87,7 @@ def remove_images(image_name):
 
 def load_images_to_minikube():
     subprocess.run(["minikube", "image", "load", "mapper"])
-    subprocess.run(["minikube", "image", "load", "reducer"])
+    #subprocess.run(["minikube", "image", "load", "reducer"])
     subprocess.run(["minikube", "image", "load", "shuffler"])
 
     
@@ -100,6 +100,12 @@ def remove_images_from_minikube():
 def attach_source_to_pod(pod_name_path, source_path):
     subprocess.run(["kubectl", "cp", source_path, pod_name_path])
 
+
+
+
+
+def prepare_Volume_paths():
+    pass
 
 
 # lowkey deprecated functions...
