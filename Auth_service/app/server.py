@@ -126,7 +126,7 @@ def admin_list_users():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-        create_user("admin", "password")
-        create_user("guest", "password")
+        create_user("admin", "admin")
+        create_user("guest", "guest")
 
     app.run(host='0.0.0.0', port=1337, debug=True) # TODO: disable

@@ -3,3 +3,4 @@ flask-sqlalchemy
 requests
 pyjwt
 pycryptodome
+cryptography
