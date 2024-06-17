@@ -5,10 +5,10 @@ import requests
 
 
 # Paths to files
-MAPPER = 'skeletons/mapper_skeleton.py'
-REDUCER = 'skeletons/reducer_skeleton.py'
+MAPPER = 'mapper_input.py'
+REDUCER = 'reducer_input.py'
 
-FILENAME = "examples/word_count_data.txt"
+FILENAME = "word_count_data.txt"
 
 files = {
     'mapper' : (MAPPER, open(MAPPER), 'r'),
@@ -24,7 +24,9 @@ data = {
 # r = requests.get("http://localhost:5000/check/5")
 # print(r.text)
 
-
-response = requests.post("http://localhost:5000/setup", files=files, data=data)
+response = requests.post("http://10.244.0.77:5000/setup", files=files, data=data)
+#response = requests.post("http://localhost:5000/setup", files=files, data=data)
 print('Status code:', response.status_code)
 print('Response text:', response.text)
+
+

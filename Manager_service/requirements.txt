@@ -1,6 +1,6 @@
 flask
-dotenv
-sqlite3
+pysqlite3
+python-dotenv
 requests
 datetime
 kubernetes

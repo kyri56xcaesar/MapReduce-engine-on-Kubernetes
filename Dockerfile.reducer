@@ -1,0 +1,3 @@
+FROM python:3.9
+
+COPY Manager_service/kube/skeletons/reducer_skeleton.py /reducer_skeleton.py

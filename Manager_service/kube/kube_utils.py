@@ -25,10 +25,15 @@ def estimate_num_mappers(file_size, chunk_size=CHUNK_SIZE):
     return file_size // chunk_size + (1 if file_size % chunk_size > 0 else 0)
 
 # split a given file to chucks so that they can be used for different workers
-def split_datafile(file_path, chunk_size=CHUNK_SIZE):
+def split_datafile(file_path, jid, chunk_size=CHUNK_SIZE):
     # check if the directory exists
-    chunk_dir = os.path.join(os.getcwd(), 'data')
+    chunk_dir = os.path.join(os.getcwd(), 'mnt/data/'+str(jid)+'/mapper/in')
+    reducer_in = os.path.join(os.getcwd(), 'mnt/data/'+str(jid)+'/reducer/in')
+    reducer_out = os.path.join(os.getcwd(), 'mnt/data/'+str(jid)+'/reducer/out')
     os.makedirs(chunk_dir, exist_ok=True)
+    os.makedirs(reducer_in, exist_ok=True)
+    os.makedirs(reducer_out, exist_ok=True)
+
     
     # read the entire file
     with open(file_path, 'r') as f:
@@ -63,7 +68,8 @@ REDUCER_TEMPLATE_PATH = "templates/py_reducersource_extention.template"
 DOCKERFILE_TEMPLATE_PATH = "templates/Dockerfile.py.template"
 
 
-def docker_ize(dockerfile_name, image_name, py_skeleton_path, curr_path):
+
+def docker_ize_templated(dockerfile_name, image_name, py_skeleton_path, curr_path):
     
     dockerfile_template = DOCKERFILE_TEMPLATE_PATH
     
@@ -87,8 +93,7 @@ def remove_images(image_name):
 
 def load_images_to_minikube():
     subprocess.run(["minikube", "image", "load", "mapper"])
-    #subprocess.run(["minikube", "image", "load", "reducer"])
-    subprocess.run(["minikube", "image", "load", "shuffler"])
+    subprocess.run(["minikube", "image", "load", "reducer"])
 
     
 def remove_images_from_minikube():

@@ -4,10 +4,9 @@ from flask import *
 from kubernetes import client, config
 
 from Jobs import *
-import kube.kube_client
-import kube.kube_utils
+from kube.kube_client import *
+from kube.kube_utils import *
 from service_utils import *
-import kube
 import db.Database as db
 # This service should provide an REST api in order to setup an execution of a JOB
 #
@@ -58,20 +57,11 @@ def main():
 #
 # await results
 
-@app.route("/submit-job")
-def submit_job():
+def schedule_job(jid, filename, mapper, reducer):
     
-    data = open("examples/word_count_data.txt", "r")
-    content = data.readlines()
-    
-    split_data = content.split(" ")
-    
-    print(data)
-    print(split_data)
+    kube_client_main(jid, filename, mapper, reducer)
     
     
-    
-    pass
 
 
 @app.route("/setup/", methods=["POST"])
@@ -97,15 +87,22 @@ def configure_job():
         map_file = request.files['mapper']
         reduce_file = request.files['reducer']
         
+        
+        # Save data in a db
         job: Job = Job()
         
         # Setup Job conf
-        job.setup_conf(map_file.read().decode("utf-8"), reduce_file.read().decode("utf-8"), filename)
+        mapper_content = map_file.read().decode("utf-8")
+        reducer_content = reduce_file.read().decode("utf-8")
+        #job.setup_conf(mapper_content, reducer_content, filename)
 
-
-        _, jid = db.insert_job(job.JobConfiguration)
+        #_, jid = db.insert_job(job.JobConfiguration)
         
-        job.jid = jid
+        #job.jid = jid
+        jid = 0
+        
+        # Schedule an actual job in the K8S
+        schedule_job(jid, filename, mapper_content, reducer_content)
 
         # submit the job
         return jid_json_formatted_message(str(jid), "message", "files received!", 200)
