@@ -8,12 +8,11 @@ from kubernetes.client.rest import ApiException
 # apply manifests
 config.load_kube_config()
 k8s_client = client.ApiClient()
-yaml_file = './manager-manifest.yaml'
+yaml_file = 'manifests/manager-manifest.yaml'
 namespace = 'default'
 pattern = r'^manager-\d+$'
 manager_pod_name = 'manager'
 core_v1 = client.CoreV1Api()
-
 
 
 def docker_ize_templated(dockerfile_name, image_name, py_skeleton_path, curr_path):
@@ -35,6 +34,7 @@ def docker_ize_templated(dockerfile_name, image_name, py_skeleton_path, curr_pat
 
     subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile_name, curr_path])
     
+
 
 def get_matching_pods(namespace, pattern):
     try:
@@ -106,9 +106,9 @@ def apply_manifests():
 # This main should boot up everything
 
 if __name__ == "__main__":
-    #start_minikube()
-    #build_images()
-    #load_images_to_minikube()
+    # start_minikube()
+    # build_images()
+    # load_images_to_minikube()
     #apply_manifests()
     
     pods = get_matching_pods(namespace, pattern)

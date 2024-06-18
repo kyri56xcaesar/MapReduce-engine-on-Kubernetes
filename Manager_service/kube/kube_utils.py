@@ -1,4 +1,4 @@
-import os
+import os, json, glob
 
 
 # Bunch of utility functions and data for the kube_client
@@ -30,9 +30,11 @@ def split_datafile(file_path, jid, chunk_size=CHUNK_SIZE):
     chunk_dir = os.path.join(os.getcwd(), 'mnt/data/'+str(jid)+'/mapper/in')
     reducer_in = os.path.join(os.getcwd(), 'mnt/data/'+str(jid)+'/reducer/in')
     reducer_out = os.path.join(os.getcwd(), 'mnt/data/'+str(jid)+'/reducer/out')
+    shuffler_out = os.path.join(os.getcwd(), 'mnt/data/'+str(jid)+'/shuffler/in')
     os.makedirs(chunk_dir, exist_ok=True)
     os.makedirs(reducer_in, exist_ok=True)
     os.makedirs(reducer_out, exist_ok=True)
+    os.makedirs(shuffler_out, exist_ok=True)
 
     
     # read the entire file
@@ -59,9 +61,6 @@ def split_datafile(file_path, jid, chunk_size=CHUNK_SIZE):
         with open(chunk_file_path, 'w') as chunk_file:
             chunk_file.writelines(chunk)
 
-
-def prepare_shuffling_data(jid):
-    pass
 
 def cleanUp_pv(jid, path):
     

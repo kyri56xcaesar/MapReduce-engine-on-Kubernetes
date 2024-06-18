@@ -1,6 +1,5 @@
-import asyncio
 import glob, json
-from math import floor
+from math import ceil
 from time import sleep
 from .kube_utils import *
 from kubernetes import client, config, utils
@@ -16,7 +15,11 @@ namespace = 'default'
 
 def create_and_apply_mapper_Job_manifest(jid, myfunc, no_mappers):
 
-
+    # Load kube config from outside
+    #config.load_kube_config()
+    # load kube config from within
+    config.load_incluster_config()
+    
     jid = str(jid)
     #if no_mappers < 0 or no_mappers > 10:
     #    return
@@ -24,7 +27,7 @@ def create_and_apply_mapper_Job_manifest(jid, myfunc, no_mappers):
     job = client.V1Job(
     api_version="batch/v1",
     kind="Job",
-    metadata=client.V1ObjectMeta(name=jid+"mapper-job-"),
+    metadata=client.V1ObjectMeta(name="mapper-job"),
     spec=client.V1JobSpec(
         completions=no_mappers,  # Total number of mapper jobs to complete
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
@@ -80,72 +83,21 @@ def create_and_apply_mapper_Job_manifest(jid, myfunc, no_mappers):
     )
     return api_response
 
-def create_and_apply_shuffler_Job_manifest(jid, no_shuffler):
-
-    jid = str(jid)
-    
-    # Create the Job object
-    job = client.V1Job(
-        api_version="batch/v1",
-        kind="Job",
-        metadata=client.V1ObjectMeta(name=jid+"-shuffler-job"),
-        spec=client.V1JobSpec(
-            completions=no_shuffler,  # Total number of reducer jobs to complete
-            parallelism=no_shuffler,  # Number of reducer jobs to run in parallel
-            completion_mode="Indexed",
-            template=client.V1PodTemplateSpec(
-                metadata=client.V1ObjectMeta(labels={"app": "shufflers"}),
-                spec=client.V1PodSpec(
-                    containers=[
-                        client.V1Container(
-                            name="mapreduce",
-                            image="shuffler:latest",
-                            image_pull_policy="IfNotPresent",
-                            command=[
-                                "sh", "-c",
-                                'python3 /shuffler.py -i /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out -o /mnt/data/'+jid+'/reducer/in/shuffler-${JOB_COMPLETION_INDEX}.out'
-                            ],
-                            ports=[client.V1ContainerPort(container_port=8081, name="reducer")],
-                            volume_mounts=[
-                                client.V1VolumeMount(
-                                    mount_path="/mnt/data/",
-                                    name="manager-storage"
-                                )
-                            ]
-                        )
-                    ],
-                    restart_policy="OnFailure",
-                    volumes=[
-                        client.V1Volume(
-                            name="manager-storage",
-                            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                                claim_name="keep-alive-pod-pvc"
-                            )
-                        )
-                    ]
-                )
-            )
-        )
-    )
-
-    # Create the job in the Kubernetes cluster
-    api_instance = client.BatchV1Api()
-    api_response = api_instance.create_namespaced_job(
-        body=job,
-        namespace="default"
-    )
-    return api_response
 
 def create_and_apply_reducer_Job_manifest(jid, myfunc, no_reducers):
     
-
+    # Load kube config from outside
+    #config.load_kube_config()
+    # load kube config from within
+    config.load_incluster_config()
+    
     jid = str(jid)
     
     # Create the Job object
     job = client.V1Job(
         api_version="batch/v1",
         kind="Job",
-        metadata=client.V1ObjectMeta(name=jid+"-reducer-job"),
+        metadata=client.V1ObjectMeta(name="reducer-job"),
         spec=client.V1JobSpec(
             completions=no_reducers,  # Total number of reducer jobs to complete
             parallelism=no_reducers,  # Number of reducer jobs to run in parallel
@@ -222,16 +174,21 @@ def check_job_status(jid, namespace):
 
 
 
-async def wait_for_mapper_jobs(namespace, jid, no_workers):
-    tasks = []
-    for i in range(no_workers):
-        job_name = f"mapper-{jid}-{i}"
-        tasks.append(check_job_status(namespace, job_name))
-    results = await asyncio.gather(*tasks)
-    return all(results)
+def wait_for_mapper_jobs(namespace, jid, no_workers):
+    for _ in range(300):  # Try for a reasonable number of times, e.g., 5 minutes if checking every second
+        all_completed = True
+        for i in range(no_workers):
+            job_name = f"mapper-{jid}-{i}"
+            if not check_job_status(namespace, job_name):
+                all_completed = False
+                break
+        if all_completed:
+            return True
+        sleep(1)  # Sleep for a second before the next check
+    return False
 
 
-async def kube_client_main(jid, filepath, mapper, reducer):
+def kube_client_main(jid, filepath, mapper, reducer):
     
     # Load kube config from outside
     #config.load_kube_config()
@@ -258,27 +215,65 @@ async def kube_client_main(jid, filepath, mapper, reducer):
     
     
     # need to wait for map job to complete.    
-    all_mappers_completed = await wait_for_mapper_jobs(namespace, jid, no_workers)
+    all_mappers_completed = wait_for_mapper_jobs(namespace, jid, no_workers)
     if not all_mappers_completed:
         print("One or more mapper jobs failed. Exiting.")
         return 1
     
     # preprocess the mapped data to prepare shuffling
-    path = "/mnt/data/"+jid+"mapper/out/*"
-    mapped_files = [file for file in glob.glob(path)]
-    for file_name in mapped_files:
-        with open(file_name) as f:
+    # apply SHUFFLE 
+    input_path = "/mnt/data/"+jid+"/shuffler/in/mapper-*.out"
+    output_path = "mnt/data/"+jid+"/reducer/in/"
+
+    mapped_files = glob.glob(input_path)
+
+    shuffled_data = {}
+
+    for file_path in mapped_files:
+        file_name = os.path.basename(file_path)
+        print(file_name)
+        
+        with open(file_path) as f:
             data = json.load(f)
+            for key, value in data.items():
+                if key not in shuffled_data:
+                    shuffled_data[key] = value
+                else:
+                    shuffled_data[key].extend(value)
+            
+    # prepare and estimate reducers
+    keys = list(shuffled_data.keys())
+    no_reducers = ceil(len(keys) / no_workers)
+    
+    keys_per_reducer = ceil(len(keys) / no_reducers)
+    
+    for i in range(no_reducers):
+        reducer_data = {}
+        start_index = i * keys_per_reducer
+        end_index = min((i + 1) * keys_per_reducer, len(keys))
+        
+        for key in keys[start_index:end_index]:
+            reducer_data[key] = shuffled_data[key]
+            
+        reducer_file_path = os.path.join(output_path, f"reducer-{i}.in")
+        with open(reducer_file_path, 'w') as out:
+            json.dump(reducer_data, out, indent=1, ensure_ascii=False)
+        
+
+    
+            
             
     # apply the SHUFFLE job
     
+    # apply the SHUFFLE job
+    
     # apply the REDUCERS job
-    create_and_apply_reducer_Job_manifest(jid, reducer, floor(no_workers/3))    
+    create_and_apply_reducer_Job_manifest(jid, reducer, no_reducers)    
     
     
     # save output only and cleanup.
     # cleanup pv with given jid
-    cleanUp_pv(jid)
+    #cleanUp_pv(jid)
      
     return 0
   
