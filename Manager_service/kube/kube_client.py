@@ -23,7 +23,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
     job = client.V1Job(
     api_version="batch/v1",
     kind="Job",
-    metadata=client.V1ObjectMeta(name="mapper-job"),
+    metadata=client.V1ObjectMeta(name="mapper-job"+jid),
     spec=client.V1JobSpec(
         completions=no_mappers,  # Total number of mapper jobs to complete
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
@@ -31,7 +31,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         backoff_limit_per_index=4,
         template=client.V1PodTemplateSpec(
             
-            metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job"}),
+            metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job"+jid}),
             spec=client.V1PodSpec(
                 containers=[
                     client.V1Container(
@@ -40,7 +40,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
-                            'echo ${MYFUNC} > /mapper_input.py && echo ${JOB_COMPLETION_INDEX} && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
+                            'echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
                         ],
                         ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
                         volume_mounts=[
@@ -91,7 +91,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
     job = client.V1Job(
         api_version="batch/v1",
         kind="Job",
-        metadata=client.V1ObjectMeta(name="reducer-job"),
+        metadata=client.V1ObjectMeta(name="reducer-job"+jid),
         spec=client.V1JobSpec(
             completions=no_reducers,  # Total number of reducer jobs to complete
             parallelism=no_reducers,  # Number of reducer jobs to run in parallel
@@ -196,11 +196,11 @@ def kube_client_main(jid, filepath, mapper, reducer):
       
     # apply THE MAPPERS job
     create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, no_workers)
-    logger.info(f'Mapper job applied')
+    logger.info(f'Mapper job{jid} applied')
     
             
-    logger.info('Waiting for mapper jobs to complete.')
-    mapper_status = check_job_status(api_instance=batch_v1, job_name="mapper-job", namespace=namespace)
+    logger.info('Waiting for mapper job'+jid+' to complete.')
+    mapper_status = check_job_status(api_instance=batch_v1, job_name="mapper-job"+jid, namespace=namespace)
     logger.info(f"Status {mapper_status}")
  
     # apply SHUFFLE 
@@ -260,11 +260,11 @@ def kube_client_main(jid, filepath, mapper, reducer):
     
         
     # apply the REDUCERS job
-    logger.info(f'applying reducer job')
+    logger.info(f'applying reducer job{jid}')
     create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
     
-    logger.info(f'waiting for reducer-job')
-    reducer_status = check_job_status(api_instance=batch_v1, job_name="reducer-job", namespace=namespace)
+    logger.info(f'waiting for reducer-job{jid}')
+    reducer_status = check_job_status(api_instance=batch_v1, job_name="reducer-job"+jid, namespace=namespace)
     logger.info(f'reducer_status: {reducer_status}')
     
     # save output only and cleanup.
@@ -274,8 +274,8 @@ def kube_client_main(jid, filepath, mapper, reducer):
     
     
     # delete jobs
-    delete_job(batch_v1, "mapper-job")
-    delete_job(batch_v1, "reducer-job")
+    delete_job(batch_v1, "mapper-job"+jid)
+    delete_job(batch_v1, "reducer-job"+jid)
      
     return {"jid": jid, "mapper-status": mapper_status, "reducer-status":reducer_status}
   

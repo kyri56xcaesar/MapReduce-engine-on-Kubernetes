@@ -87,6 +87,8 @@ def configure_job():
         map_file = request.files['mapper']
         reduce_file = request.files['reducer']
         
+        logger.info(f'map_file received: {map_file}')
+        logger.info(f'reduce_file received: {reduce_file}')
         
         # Save data in a db
         job: Job = Job()
@@ -94,16 +96,22 @@ def configure_job():
         # Setup Job conf
         mapper_content = map_file.read().decode("utf-8")
         reducer_content = reduce_file.read().decode("utf-8")
+        
+        logger.info(f'mapper_content received: {mapper_content}')
+        logger.info(f'reducer_content received: {reducer_content}')
+        
         job.setup_conf(mapper_content, reducer_content, filename)
 
         _, jid = db.insert_job(job.JobConfiguration)
         
         job.jid = jid
+        logger.info(f'current JID: {jid}')
         #jid = 0
         
         # Schedule an actual job in the K8S
         job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
 
+        logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job
         return jid_json_formatted_message(str(jid), "message", "files received!", 200)

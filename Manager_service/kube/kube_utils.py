@@ -13,7 +13,7 @@ import os, subprocess
 # Utils for determening how big the data is
 # set a chuck size of a dataset file to be at 64 MB
 #CHUNK_SIZE = 128 * 1024 * 1024 # 128 MB
-CHUNK_SIZE = 128 # 128 bytes for testing
+CHUNK_SIZE = 2048 # 2048 bytes for testing
 
 
 # return the size of a file in bytes
