@@ -178,7 +178,7 @@ def wait_for_mapper_jobs(namespace, jid, no_workers):
     for _ in range(300):  # Try for a reasonable number of times, e.g., 5 minutes if checking every second
         all_completed = True
         for i in range(no_workers):
-            job_name = f"mapper-{jid}-{i}"
+            job_name = f"mapper-job-{i}"
             if not check_job_status(namespace, job_name):
                 all_completed = False
                 break
