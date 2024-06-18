@@ -1,4 +1,4 @@
-import os, json, glob
+import os, subprocess
 
 
 # Bunch of utility functions and data for the kube_client
@@ -62,11 +62,12 @@ def split_datafile(file_path, jid, chunk_size=CHUNK_SIZE):
             chunk_file.writelines(chunk)
 
 
-def cleanUp_pv(jid, path):
+def cleanUp_pv(jid):
     
-    for root, d_names, f_names in os.walk(path):
-        print(root, d_names, f_names)
-
+    subprocess.run(["rm", "-rf", "/mnt/data/"+str(jid)+"/mapper"])
+    subprocess.run(["rm", "-rf", "/mnt/data/"+str(jid)+"/shuffler"])
+    subprocess.run(["rm", "-rf", "/mnt/data/"+str(jid)+"/reducer/in"])
+    
 
 
 

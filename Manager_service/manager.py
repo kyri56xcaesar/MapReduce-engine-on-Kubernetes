@@ -1,4 +1,5 @@
 import os
+import logging
 from dotenv import load_dotenv
 from flask import *
 from kubernetes import client, config
@@ -25,7 +26,8 @@ import db.Database as db
 #
 #
 load_dotenv()
-
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def create_app():
     
@@ -57,15 +59,13 @@ def main():
 #
 # await results
 
-def schedule_job(jid, filename, mapper, reducer):
     
-    kube_client_main(jid, filename, mapper, reducer)
     
     
 
 
-@app.route("/setup/", methods=["POST"])
-@app.route("/setup", methods=["POST"])
+@app.route("/submit-job/", methods=["POST"])
+@app.route("/submit-job", methods=["POST"])
 def configure_job():
     
     ## guard statements, check if everything is here
@@ -94,16 +94,17 @@ def configure_job():
         # Setup Job conf
         mapper_content = map_file.read().decode("utf-8")
         reducer_content = reduce_file.read().decode("utf-8")
-        #job.setup_conf(mapper_content, reducer_content, filename)
+        job.setup_conf(mapper_content, reducer_content, filename)
 
-        #_, jid = db.insert_job(job.JobConfiguration)
+        _, jid = db.insert_job(job.JobConfiguration)
         
-        #job.jid = jid
-        jid = 0
+        job.jid = jid
+        #jid = 0
         
         # Schedule an actual job in the K8S
-        schedule_job(jid, filename, mapper_content, reducer_content)
+        job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
 
+        
         # submit the job
         return jid_json_formatted_message(str(jid), "message", "files received!", 200)
     
@@ -190,7 +191,7 @@ def check_all():
 @app.route("/check/<jid>", methods=["GET"])
 def check_jid(jid):
     
-    print(jid)
+    logger.info(f'JOB id: {jid}')
     
     job: Job = db.get_job_by_id(jid)
     

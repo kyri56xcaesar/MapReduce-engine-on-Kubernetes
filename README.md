@@ -36,14 +36,13 @@
 #### Workers are spawned and monitored by the Manager Service
 - [x] API set
 - [x] Job Configuring
-- [x] Hold Jobs in a db
+- [ ] Hold Jobs in a db
 - [x] Formatting/setup
 - [x] Initialization, talk to cluster.
 - [x] Instantiate images on kubernetes and then apply logic to dynamically change inp/out
 - [x] master/workers 
 - [x] decide/reasses kind of manifests
-- [ ] automate process
-
+- [x] automate process
 - [ ] provide access for Job status view
 
 ### Shared File System

@@ -108,7 +108,7 @@ def apply_manifests():
 if __name__ == "__main__":
     # start_minikube()
     # build_images()
-    # load_images_to_minikube()
+    #load_images_to_minikube()
     #apply_manifests()
     
     pods = get_matching_pods(namespace, pattern)
@@ -119,3 +119,8 @@ if __name__ == "__main__":
         pod_ip = get_pod_ip(namespace, pod)
         print(pod_ip)
     
+
+
+    
+
+
