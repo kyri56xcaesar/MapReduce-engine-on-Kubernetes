@@ -117,9 +117,9 @@ if __name__ == "__main__":
 
     
     
-    # build_images()
+    build_images()
     # load_images_to_minikube()
-    # apply_manifests(k8s_client, yaml_file)
+    apply_manifests(k8s_client, yaml_file)
     
     time.sleep(4)
     

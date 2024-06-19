@@ -232,7 +232,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
             
     # prepare and estimate reducers
     keys = list(shuffled_data.keys())
-    no_reducers = ceil(len(keys) / no_workers)
+    no_reducers = 3
     
     logger.info(f'Keys: {keys}')
     logger.info(f'No_reducers: {no_reducers}')

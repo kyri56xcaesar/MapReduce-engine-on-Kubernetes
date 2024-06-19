@@ -20,16 +20,17 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "10"
+agsa = "3"
 url = "http://10.244.0."+agsa+":5000/submit-job"
-num_requests = 4
-try:
-    response = requests.post(url=url, files=files, data=data)
-    print(f'Request {1}: Status Code = {response.status_code}')
-    # Process the response as needed
-    # e.g., print(response.json())
-except requests.exceptions.RequestException as e:
-    print(f'Request {1} failed: {e}')
+num_requests = 1
+for i in range(num_requests):
+    try:
+        response = requests.post(url=url, files=files, data=data)
+        print(f'Request {1}: Status Code = {response.status_code}')
+        # Process the response as needed
+        # e.g., print(response.json())
+    except requests.exceptions.RequestException as e:
+        print(f'Request {1} failed: {e}')
 
 
 
