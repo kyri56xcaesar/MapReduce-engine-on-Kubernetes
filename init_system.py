@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     
     
-    #start_minikube()
+    # start_minikube()
     
     #apply manifests
     config.load_kube_config()
