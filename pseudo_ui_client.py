@@ -20,9 +20,9 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "115"
-url = "http://10.244.0."+agsa+":5000/submit-job"
-num_requests = 2
+agsa = "1"
+url = "http://10.244.1."+agsa+":5000/submit-job"
+num_requests = 1
 
 for i in range(num_requests):
     try:

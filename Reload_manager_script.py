@@ -15,6 +15,9 @@ def build_images():
 
     # need to create image for Manager
 
+def delete_manager(yaml):
+    subprocess.run(["kubectl", "delete", "-f", yaml])
+
 
 def apply_manifests(k8s_client, yaml_file):
     # manager manifest
@@ -64,6 +67,7 @@ if __name__ == "__main__":
     core_v1 = client.CoreV1Api()
 
     
+    delete_manager(yaml_file)
     build_images()
     apply_manifests(k8s_client, yaml_file)
 

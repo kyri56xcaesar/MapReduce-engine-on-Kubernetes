@@ -1,4 +1,4 @@
-import os, subprocess
+import os, subprocess, json
 
 
 # Bunch of utility functions and data for the kube_client
@@ -13,7 +13,7 @@ import os, subprocess
 # Utils for determening how big the data is
 # set a chuck size of a dataset file to be at 64 MB
 #CHUNK_SIZE = 128 * 1024 * 1024 # 128 MB
-CHUNK_SIZE = 1024 * 10 # 2048 bytes for testing
+CHUNK_SIZE = 1024 # 2048 bytes for testing
 
 
 # return the size of a file in bytes
@@ -70,6 +70,22 @@ def cleanUp_pv(jid):
     
 
 
+def concatenate_json_objects(input_file, output_file):
+    combined_data = {}
+
+    with open(input_file, 'r') as file:
+        for line in file:
+            # Strip leading/trailing whitespace and check if line is not empty
+            line = line.strip()
+            if line:
+                # Parse the JSON object
+                data = json.loads(line)
+                # Update the combined dictionary with the current data
+                combined_data.update(data)
+    
+    # Write the combined dictionary to the output file
+    with open(output_file, 'w') as out_file:
+        json.dump(combined_data, out_file, indent=4)
 
 
 

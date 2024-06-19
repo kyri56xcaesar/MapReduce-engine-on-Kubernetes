@@ -65,6 +65,7 @@ def cmd():
         else:
             return jsonify({"message": "Only admin is allowed to run that command."})
     elif cmd == "submit-job":
+        
         return jsonify({"message": "Not implemented yet."})
     elif cmd == "view-jobs":
         return jsonify({"message": "Not implemented yet."})

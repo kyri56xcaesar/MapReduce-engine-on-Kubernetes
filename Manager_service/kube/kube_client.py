@@ -240,16 +240,13 @@ def kube_client_main(jid, filepath, mapper, reducer):
                 
         # prepare and estimate reducers
         keys = list(shuffled_data.keys())
-        no_reducers = 3
         
+        keys_per_reducer = ceil(len(keys) / no_workers)
+        
+        no_reducers = ceil(len(keys) / keys_per_reducer)
+               
         logger.info(f'Keys: {keys}')
         logger.info(f'No_reducers: {no_reducers}')
-        
-        if no_reducers == 0:
-            no_reducers = 1
-        
-        keys_per_reducer = ceil(len(keys) / no_reducers)
-        
         logger.info(f'Keys_per_reducer: {keys_per_reducer}')
         
         for i in range(no_reducers):
