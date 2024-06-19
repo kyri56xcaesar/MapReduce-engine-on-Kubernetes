@@ -29,6 +29,13 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
         completion_mode="Indexed",
         backoff_limit_per_index=4,
+        # pod_failure_policy=client.V1PodFailurePolicy(
+        #     rules=client.V1PodFailurePolicyRule(
+        #         action=client.V1ExecAction(
+        #             type= "DisruptionTarget"
+        #         )
+        #     )                   
+        # ) ,
         template=client.V1PodTemplateSpec(
             
             metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job"+jid}),
@@ -57,7 +64,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         ]
                     )
                 ],
-                restart_policy="OnFailure",
+                restart_policy="Never",
                 volumes=[
                     client.V1Volume(
                         name="manager-storage",
@@ -96,6 +103,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
             completions=no_reducers,  # Total number of reducer jobs to complete
             parallelism=no_reducers,  # Number of reducer jobs to run in parallel
             completion_mode="Indexed",
+            backoff_limit_per_index=3,
             template=client.V1PodTemplateSpec(
                 metadata=client.V1ObjectMeta(labels={"app": "reducers"}),
                 spec=client.V1PodSpec(
@@ -204,68 +212,68 @@ def kube_client_main(jid, filepath, mapper, reducer):
     logger.info(f"Status {mapper_status}")
  
     # apply SHUFFLE 
-    
-    logger.info('About to shuffle.')
+    if mapper_status:
+        logger.info('About to shuffle.')
 
-    input_path = "/mnt/data/"+jid+"/shuffler/in/"
-    output_path = "/mnt/data/"+jid+"/reducer/in/"
+        input_path = "/mnt/data/"+jid+"/shuffler/in/"
+        output_path = "/mnt/data/"+jid+"/reducer/in/"
 
-    logger.info(f'Input_path: {input_path}')
-    logger.info(f'Output_path: {output_path}')
+        logger.info(f'Input_path: {input_path}')
+        logger.info(f'Output_path: {output_path}')
 
-    files = os.listdir(input_path)
-    logger.info(f'files from listdir: {files}')
-    
-    shuffled_data = {}
-
-    for file_path in files:
-        file_name = os.path.basename(file_path)
-        logger.info(f"Processing file: {file_name}")
+        files = os.listdir(input_path)
+        logger.info(f'files from listdir: {files}')
         
-        with open(input_path + file_path) as f:
-            data = json.load(f)
-            for key, value in data.items():
-                if key not in shuffled_data:
-                    shuffled_data[key] = value
-                else:
-                    shuffled_data[key].extend(value)
+        shuffled_data = {}
+
+        for file_path in files:
+            file_name = os.path.basename(file_path)
+            logger.info(f"Processing file: {file_name}")
             
-    # prepare and estimate reducers
-    keys = list(shuffled_data.keys())
-    no_reducers = ceil(len(keys) / no_workers)
-    
-    logger.info(f'Keys: {keys}')
-    logger.info(f'No_reducers: {no_reducers}')
-    
-    if no_reducers == 0:
-        no_reducers = 1
-    
-    keys_per_reducer = ceil(len(keys) / no_reducers)
-    
-    logger.info(f'Keys_per_reducer: {keys_per_reducer}')
-    
-    for i in range(no_reducers):
-        reducer_data = {}
-        start_index = i * keys_per_reducer
-        end_index = min((i + 1) * keys_per_reducer, len(keys))
+            with open(input_path + file_path) as f:
+                data = json.load(f)
+                for key, value in data.items():
+                    if key not in shuffled_data:
+                        shuffled_data[key] = value
+                    else:
+                        shuffled_data[key].extend(value)
+                
+        # prepare and estimate reducers
+        keys = list(shuffled_data.keys())
+        no_reducers = 3
         
-        for key in keys[start_index:end_index]:
-            reducer_data[key] = shuffled_data[key]
+        logger.info(f'Keys: {keys}')
+        logger.info(f'No_reducers: {no_reducers}')
+        
+        if no_reducers == 0:
+            no_reducers = 1
+        
+        keys_per_reducer = ceil(len(keys) / no_reducers)
+        
+        logger.info(f'Keys_per_reducer: {keys_per_reducer}')
+        
+        for i in range(no_reducers):
+            reducer_data = {}
+            start_index = i * keys_per_reducer
+            end_index = min((i + 1) * keys_per_reducer, len(keys))
             
-        reducer_file_path = os.path.join(output_path, f"reducer-{i}.in")
-        with open(reducer_file_path, 'w') as out:
-            json.dump(reducer_data, out, indent=1, ensure_ascii=False)
+            for key in keys[start_index:end_index]:
+                reducer_data[key] = shuffled_data[key]
+                
+            reducer_file_path = os.path.join(output_path, f"reducer-{i}.in")
+            with open(reducer_file_path, 'w') as out:
+                json.dump(reducer_data, out, indent=1, ensure_ascii=False)
+            
+        logger.info(f'reducer_data: {reducer_data}')
         
-    logger.info(f'reducer_data: {reducer_data}')
-    
+            
+        # apply the REDUCERS job
+        logger.info(f'applying reducer job{jid}')
+        create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
         
-    # apply the REDUCERS job
-    logger.info(f'applying reducer job{jid}')
-    create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
-    
-    logger.info(f'waiting for reducer-job{jid}')
-    reducer_status = check_job_status(api_instance=batch_v1, job_name="reducer-job"+jid, namespace=namespace)
-    logger.info(f'reducer_status: {reducer_status}')
+        logger.info(f'waiting for reducer-job{jid}')
+        reducer_status = check_job_status(api_instance=batch_v1, job_name="reducer-job"+jid, namespace=namespace)
+        logger.info(f'reducer_status: {reducer_status}')
     
     # save output only and cleanup.
     # cleanup pv with given jid
