@@ -20,9 +20,9 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "52"
+agsa = "83"
 url = "http://10.244.0."+agsa+":5000/submit-job"
-num_requests = 1
+num_requests = 2
 for i in range(num_requests):
     try:
         response = requests.post(url=url, files=files, data=data)
