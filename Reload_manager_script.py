@@ -21,6 +21,34 @@ def apply_manifests(k8s_client, yaml_file):
     utils.create_from_yaml(k8s_client, yaml_file,verbose=True)
 
 
+def get_matching_pods(core_v1, namespace, pattern):
+    try:
+        # List all the pods in the specified namespace
+        pods = core_v1.list_namespaced_pod(namespace)
+        matching_pods = []
+        for pod in pods.items:
+            pod_name = pod.metadata.name
+            # Check if the pod name matches the pattern
+            if re.match(pattern, pod_name):
+                matching_pods.append(pod_name)
+        return matching_pods
+    except ApiException as e:
+        print(f"Exception when calling CoreV1Api->list_namespaced_pod: {e}")
+        return None    
+    
+def get_pod_ip(core_v1, namespace, pod_name):
+    try:
+        # Get the details of the specified pod
+        pod = core_v1.read_namespaced_pod(name=pod_name, namespace=namespace)
+        # Extract the pod's IP address
+        pod_ip = pod.status.pod_ip
+        return pod_ip
+    except ApiException as e:
+        print(f"Exception when calling CoreV1Api->read_namespaced_pod: {e}")
+        return None
+
+
+
 # This main should boot up everything
 
 if __name__ == "__main__":
@@ -39,6 +67,17 @@ if __name__ == "__main__":
     build_images()
     apply_manifests(k8s_client, yaml_file)
 
+    time.sleep(4)
+    
+    
+    pods = get_matching_pods(core_v1, namespace, pattern)
+    
+    print(pods)
+    
+    for pod in pods:
+        pod_ip = get_pod_ip(core_v1, namespace, pod)
+        print(pod_ip)
+    
 
     
 
