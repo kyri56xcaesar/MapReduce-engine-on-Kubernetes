@@ -20,7 +20,7 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "3"
+agsa = "52"
 url = "http://10.244.0."+agsa+":5000/submit-job"
 num_requests = 1
 for i in range(num_requests):
@@ -52,10 +52,10 @@ for i in range(num_requests):
 # print('Status code:', response.status_code)
 # print('Response text:', response.text)
 
-time.sleep(4)
-response = requests.post("http://10.244.0.48:5000/submit-job", files=files, data=data)
-print('Status code:', response.status_code)
-print('Response text:', response.text)
+# time.sleep(4)
+# response = requests.post("http://10.244.0.48:5000/submit-job", files=files, data=data)
+# print('Status code:', response.status_code)
+# print('Response text:', response.text)
 
 #response = requests.post("http://localhost:5000/submit-job", files=files, data=data)
 

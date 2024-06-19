@@ -29,6 +29,13 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
         completion_mode="Indexed",
         backoff_limit_per_index=4,
+        # pod_failure_policy=client.V1PodFailurePolicy(
+        #     rules=client.V1PodFailurePolicyRule(
+        #         action=client.V1ExecAction(
+        #             type= "DisruptionTarget"
+        #         )
+        #     )                   
+        # ) ,
         template=client.V1PodTemplateSpec(
             
             metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job"+jid}),
@@ -57,7 +64,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         ]
                     )
                 ],
-                restart_policy="OnFailure",
+                restart_policy="Never",
                 volumes=[
                     client.V1Volume(
                         name="manager-storage",
@@ -96,6 +103,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
             completions=no_reducers,  # Total number of reducer jobs to complete
             parallelism=no_reducers,  # Number of reducer jobs to run in parallel
             completion_mode="Indexed",
+            backoff_limit_per_index=3,
             template=client.V1PodTemplateSpec(
                 metadata=client.V1ObjectMeta(labels={"app": "reducers"}),
                 spec=client.V1PodSpec(
