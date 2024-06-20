@@ -63,7 +63,8 @@ logger.info(f'Auth_endpoint: {auth_endpoint}')
 logger.info(f'Manager_endpoint: {manager_endpoint}')
 
 def get_pubkey():
-    
+    auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
+    auth_endpoint=auth_endpoint_list[0]
     response = requests.get(f"http://{auth_endpoint}/pubkey")
     
     data = json.loads(response.text)
@@ -91,6 +92,9 @@ def healthz():
 @app.route("/send-jobs", methods=["POST"])
 def send_jobs():
     #data = request.get_json()
+    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    manager_endpoint=manager_endpoint_list[0]
+    
     headers = request.headers
     token = headers["Cookie"][6:]
     if not token:
@@ -134,7 +138,10 @@ def send_jobs():
 
 @app.route("/cmd", methods=["POST"])
 def cmd():
-
+    auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
+    auth_endpoint=auth_endpoint_list[0]
+    ui_endpoint_list=get_service_endpoints(namespace,'uiservice')
+    ui_endpoint=ui_endpoint_list[0]
     data = request.get_json()
     headers = request.headers
 
@@ -176,6 +183,8 @@ def cmd():
         return jsonify({"ui_message": "Not implemented yet."})
     elif cmd == "view-jobs":
         return jsonify({"ui_message": "Not implemented yet."})
+    elif cmd == "view-ips":      
+        return jsonify({"message":f"AuthService - EndPoint : {auth_endpoint}\nUiService - EndPoint: {ui_endpoint}\nManagerService - Endpoint: {manager_endpoint}"})
     else:
         return jsonify({"ui_message": "Invalid command."})
 
