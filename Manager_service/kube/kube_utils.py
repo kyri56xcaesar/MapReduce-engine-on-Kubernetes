@@ -20,10 +20,6 @@ CHUNK_SIZE = 1024 # 2048 bytes for testing
 def get_file_size(file_path):
     return os.path.getsize(file_path)
 
-# according to the default chuck size, estimate how many mappers should be used.
-def estimate_num_mappers(file_size, chunk_size=CHUNK_SIZE):
-    return file_size // chunk_size + (1 if file_size % chunk_size > 0 else 0)
-
 # split a given file to chucks so that they can be used for different workers
 def split_datafile(file_path, jid, chunk_size=CHUNK_SIZE):
     # check if the directory exists
@@ -61,6 +57,7 @@ def split_datafile(file_path, jid, chunk_size=CHUNK_SIZE):
         with open(chunk_file_path, 'w') as chunk_file:
             chunk_file.writelines(chunk)
 
+    return chunk_index
 
 def cleanUp_pv(jid):
     

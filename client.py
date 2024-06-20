@@ -173,7 +173,7 @@ def main():
                         'reducer': (reducer_file, reducer_file1, 'text/x-python')
                     }
                     data = {
-                        'filename' : "word_count_data.txt"
+                        'filename' : input_file
                     }
                     
                     url = f"http://{ip}:{UI_PORT}/send-jobs"

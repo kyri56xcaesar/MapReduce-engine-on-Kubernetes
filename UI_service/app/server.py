@@ -106,6 +106,10 @@ def send_jobs():
     reducer_file = request.files['reducer']
     filename = request.form.get('filename')
     
+    logger.info(f'mapper_file: {mapper_file}')
+    logger.info(f'reducer_file: {reducer_file}')
+    logger.info(f'filename: {filename}')
+
 
     
     if mapper_file and reducer_file and filename:

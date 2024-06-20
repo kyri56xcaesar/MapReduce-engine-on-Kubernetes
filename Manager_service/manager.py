@@ -86,6 +86,7 @@ def configure_job():
         
         logger.info(f'mapper_content received: {mapper_content}')
         logger.info(f'reducer_content received: {reducer_content}')
+        logger.info(f'filename: {filename}')
         
         job.setup_conf(mapper_content, reducer_content, filename)
 

@@ -187,20 +187,20 @@ def kube_client_main(jid, filepath, mapper, reducer):
 
 
     jid = str(jid)
-    #relative_path = os.path.join('examples', filepath)
+    #filepath = os.path.join(os.getcwd(), 'examples/', filepath)
+    
     filepath = "kube/examples/" + filepath
+    logger.info(f'FILEPATH: {filepath}')
 
     fsize = get_file_size(filepath)
-    no_workers = estimate_num_mappers(fsize)
-  
     logger.info(f'File size: {fsize}')
+    
+    # this should split the files in the /mnt path
+    # create directories in the PV for the given JID
+    no_workers = split_datafile(filepath, jid) + 1
     logger.info(f'# workers: {no_workers}')
   
 
-    # this should split the files in the /mnt path
-    # create directories in the PV for the given JID
-    split_datafile(filepath, jid)
-    logger.info(f'Chunks created')
       
     # apply THE MAPPERS job
     create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, no_workers)
@@ -245,7 +245,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
         
         no_reducers = ceil(len(keys) / keys_per_reducer)
                
-        logger.info(f'Keys: {keys}')
+        #logger.info(f'Keys: {keys}')
         logger.info(f'No_reducers: {no_reducers}')
         logger.info(f'Keys_per_reducer: {keys_per_reducer}')
         
