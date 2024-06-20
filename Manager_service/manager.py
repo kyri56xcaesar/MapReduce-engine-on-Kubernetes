@@ -105,7 +105,7 @@ def configure_job():
         return jid_json_formatted_message(str(jid), "mngr_message", f"Job submitted successfully: {job_status}", 200)
     
     except Exception as e:
-        print(f'Exception: {e}')
+        logger.error(f'Exception: {e}')
         return jid_json_formatted_message("-1", "error", f"an error occured, details: {str(e)}", 500)
         
         
@@ -169,7 +169,7 @@ def setup_job_filename(jid='-1'):
 
 
 # 
-@app.route("/health", methods=["GET"])
+@app.route("/healthz", methods=["GET"])
 def health():
     
     (_, status) = (db.check_db())
@@ -201,13 +201,19 @@ def check_jid(jid):
 def retrieve_results(jid):
     
     # Guard statements
+    logger.info(f'about to retrieve reducer out data.')
     
+    output_path = f"/mnt/data/{jid}/results{jid}.out"
+    try:
     # prepare the result data.
+        res = gather_output_chunks(jid, output_path, logger)
+    except Exception as e:
+        logger.error(f'Exception: {e}')
+        return jid_json_formatted_message("-1", "error", f"an error occured, details: {str(e)}", 500)
+            # Send the results in json format
+    # Decide if FTP or http or sth else # This is too complated prob
     
-    # Send the results in json format
-    # Decide if FTP or http or sth else
-    
-    return jid_json_formatted_message(jid, "mngr_message", "results sended", 200)
+    return jid_json_formatted_message(jid, "mngr_message", f"results gathered {res}", 200)
 
 if __name__ == "__main__":
     

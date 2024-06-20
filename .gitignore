@@ -6,3 +6,4 @@ __pycache__
 test
 todo
 *.out
+output.json

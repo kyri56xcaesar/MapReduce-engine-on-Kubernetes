@@ -66,10 +66,33 @@ def cleanUp_pv(jid):
     subprocess.run(["rm", "-rf", "/mnt/data/"+str(jid)+"/reducer/in"])
     
 
-def gather_output_chunks(jid):
-    pass
+
+# read all reducer.out and write from a single dict to 1 output
+def gather_output_chunks(jid, path, logger):
+    
+    logger.info(f'gathering result data for jid: {jid}')
+
+    output_path = f"/mnt/data/{jid}/reducer/out/"
+    out_files = os.listdir(output_path)
+    
+    result_data = {}
+    logger.info(f'out_files: {out_files}')    
+    
+    for file in out_files:
+        logger.info(f'gathering: {file}')
+        
+        with open(output_path + file) as f:
+            data = json.load(f)
+
+            result_data.update(data)
+            
+        with open(path, 'w') as out:
+            json.dump(result_data, out, indent=1, ensure_ascii=False)
+        
+    return result_data
 
 
+# could be used if reducer outs are cat'ed on one another to a single file, so you can split it.
 def concatenate_json_objects(input_file, output_file):
     combined_data = {}
 
