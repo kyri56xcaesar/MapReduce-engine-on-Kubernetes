@@ -3,9 +3,17 @@
 
 ## HOW TO USE so far.
 
-
 run: minikube start --vm-driver=docker 
     or make sure it is running: minikube status
+
+this will accomodate built the images directly to minikube
+https://minikube.sigs.k8s.io/docs/handbook/pushing/#Windows
+
+make sure to run the init system from a terminal on eval docker env
+- linux: eval $(minikube docker-env)
+- windows: & minikube -p minikube docker-env --shell powershell | Invoke-Expression
+
+
 
 run: python or python3 init_system.py
 
