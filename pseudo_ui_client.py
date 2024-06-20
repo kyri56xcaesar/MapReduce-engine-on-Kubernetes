@@ -37,13 +37,15 @@ data = {
 
 agsa = "154"
 url = "http://10.244.2."+agsa+":5000/submit-job"
-num_requests = 10
+num_requests = 5
 
 for i in range(num_requests):
     t = Thread(target=send_req)
     t.daemon = True
     t.start()
 
+time.sleep(20)
+exit
 
 
 # send the post request
