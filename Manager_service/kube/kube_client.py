@@ -28,7 +28,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         completions=no_mappers,  # Total number of mapper jobs to complete
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
         completion_mode="Indexed",
-        backoff_limit_per_index=3,
+        backoff_limit_per_index=6,
         # pod_failure_policy=client.V1PodFailurePolicy(
         #     rules=client.V1PodFailurePolicyRule(
         #         action=client.V1ExecAction(
@@ -38,7 +38,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         # ) ,
         template=client.V1PodTemplateSpec(
             
-            metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job"+jid}),
+            metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job${JobID}"}),
             spec=client.V1PodSpec(
                 containers=[
                     client.V1Container(
@@ -47,7 +47,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
-                            'echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
+                            'sleep 40 && echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/${JobID}/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/${JobID}/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
                         ],
                         ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
                         volume_mounts=[
@@ -57,14 +57,18 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                             )
                         ],
                         env=[
-                            client.V1EnvVar(
+                            V1EnvVar(
                                 name="MYFUNC",
                                 value=myfunc
+                            ),
+                            V1EnvVar(
+                                name="JobID",
+                                value=jid
                             )
                         ]
                     )
                 ],
-                restart_policy="OnFailure",
+                restart_policy="Never",
                 volumes=[
                     client.V1Volume(
                         name="manager-storage",
@@ -98,7 +102,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
     job = client.V1Job(
         api_version="batch/v1",
         kind="Job",
-        metadata=client.V1ObjectMeta(name="reducer-job"+jid),
+        metadata=client.V1ObjectMeta(name="reducer-job${JobID}"),
         spec=client.V1JobSpec(
             completions=no_reducers,  # Total number of reducer jobs to complete
             parallelism=no_reducers,  # Number of reducer jobs to run in parallel
@@ -114,7 +118,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
                             image_pull_policy="IfNotPresent",
                             command=[
                                 "sh", "-c",
-                                'echo "${MYFUNC}" > /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/'+jid+'/reducer/in/reducer-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/reducer/out/reducer-${JOB_COMPLETION_INDEX}.out'
+                                'echo "${MYFUNC}" > /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/${JobID}/reducer/in/reducer-${JOB_COMPLETION_INDEX}.in -o /mnt/data/${JobID}/reducer/out/reducer-${JOB_COMPLETION_INDEX}.out'
                             ],
                             ports=[client.V1ContainerPort(container_port=8081, name="reducer")],
                             volume_mounts=[
@@ -127,7 +131,11 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
                                 V1EnvVar(
                                     name="MYFUNC",
                                     value=myfunc
-                                )
+                                ),
+                                V1EnvVar(
+                                name="JobID",
+                                value=jid
+                            )
                             ]
                         )
                     ],
@@ -158,12 +166,12 @@ def check_job_status(api_instance, job_name, namespace):
         job = event['object']
         if job.metadata.name == job_name:
             if job.status.succeeded is not None and job.status.succeeded >= 1:
-                logger.info(f"Job {job_name} completed.")
+                logger.info(f"Job {job.metadata.name} completed.")
                 w.stop()
                 return True
                 
             elif job.status.failed is not None and job.status.failed >= 1:
-                logger.info(f"Job {job_name} failed.")
+                logger.info(f"Job {job.metadata.name} failed.")
                 w.stop()
                 return False
             
@@ -279,8 +287,8 @@ def kube_client_main(jid, filepath, mapper, reducer):
     
     
     # delete jobs
-    delete_job(batch_v1, "mapper-job"+jid)
-    delete_job(batch_v1, "reducer-job"+jid)
+    # delete_job(batch_v1, "mapper-job"+jid)
+    # delete_job(batch_v1, "reducer-job"+jid)
      
     return {"jid": jid, "mapper-status": mapper_status, "reducer-status":reducer_status}
   
