@@ -14,7 +14,7 @@ ip = "localhost"
 AUTH_PORT = "30001"
 UI_PORT = "30002"
 MANAGER_PORT = "5000"
-datasets = ["word_count_data.txt"]
+datasets = ["word_count_data.txt", "word_count_small.txt"]
 
 # LOGGING IN FROM AUTH SERVICE
 def login():
