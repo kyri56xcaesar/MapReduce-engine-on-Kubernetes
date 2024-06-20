@@ -8,7 +8,7 @@ from Jobs import *
 from kube.kube_client import *
 from kube.kube_utils import *
 from service_utils import *
-import db.Database as db
+import db.database as db
 # This service should provide an REST api in order to setup an execution of a JOB
 #
 # And handle the execution of the job
