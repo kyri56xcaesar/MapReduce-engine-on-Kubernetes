@@ -100,10 +100,9 @@ def get_pod_ip(core_v1, namespace, pod_name):
 # This main should boot up everything
 if __name__ == "__main__":
     
-    # start_minikube()
+    #start_minikube()
     
     
-    #apply manifests
     config.load_kube_config()
     k8s_client = client.ApiClient()
     core_v1 = client.CoreV1Api()

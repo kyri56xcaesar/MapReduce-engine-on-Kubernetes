@@ -197,6 +197,17 @@ def check_jid(jid):
     return job.to_json()
 
 
+@app.route("/get-job-result/<jid>", methods=["GET"])
+def retrieve_results(jid):
+    
+    # Guard statements
+    
+    # prepare the result data.
+    
+    # Send the results in json format
+    # Decide if FTP or http or sth else
+    
+    return jid_json_formatted_message(jid, "mngr_message", "results sended", 200)
 
 if __name__ == "__main__":
     

@@ -66,6 +66,9 @@ def cleanUp_pv(jid):
     subprocess.run(["rm", "-rf", "/mnt/data/"+str(jid)+"/reducer/in"])
     
 
+def gather_output_chunks(jid):
+    pass
+
 
 def concatenate_json_objects(input_file, output_file):
     combined_data = {}
