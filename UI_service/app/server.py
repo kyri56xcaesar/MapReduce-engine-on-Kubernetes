@@ -6,23 +6,26 @@ import jwt
 import os
 from kubernetes import client, config
 import logging
+
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+namespace = 'default'
+
 def get_pubkey():
-    namespace = 'default'
-    authservice_name = 'authservice'
-    authservice_endpoints = get_service_endpoints(namespace, authservice_name)
-    auth_endpoint=authservice_endpoints[0]
+    
+    authservice_endpoints = get_service_endpoints(namespace, 'authservice')
+    auth_endpoint = authservice_endpoints[0]
+    
     response = requests.get(f"http://{auth_endpoint}/pubkey")
     
     data = json.loads(response.text)
     public_key = b64decode(data["message"]).decode()
     
     return public_key
-
 
 def verify_user(token):
     public_key = get_pubkey()
@@ -54,6 +57,7 @@ def get_service_endpoints(namespace, service_name):
                 endpoint_addresses.append(f"{address.ip}:{port.port}")
 
     return endpoint_addresses
+
 @app.route("/send-jobs", methods=["POST"])
 def send_jobs():
     #data = request.get_json()
@@ -65,10 +69,8 @@ def send_jobs():
     if not payload:
         return jsonify({"message": "Token verification failed."})
     
-    namespace = 'default'
-    managerservice_name='manager'    
-    managerservice_endpoints=get_service_endpoints(namespace, managerservice_name)
-    manager_endpoint=managerservice_endpoints[0]
+    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
+    manager_endpoint = managerservice_endpoints[0]
     logger.info(request.files)
     logger.info(request.data.decode('utf-8'))
     logger.info(request.headers)
@@ -88,13 +90,11 @@ def send_jobs():
 
 @app.route("/cmd", methods=["POST"])
 def cmd():
-    namespace = 'default'
-    authservice_name = 'authservice'
-    managerservice_name='manager'
-    uiservice_name = 'uiservice'
-    authservice_endpoints = get_service_endpoints(namespace, authservice_name)
-    managerservice_endpoints=get_service_endpoints(namespace, managerservice_name)
-    uiservice_endpoints = get_service_endpoints(namespace, uiservice_name)
+
+
+    authservice_endpoints = get_service_endpoints(namespace, 'authservice')
+    managerservice_endpoints=get_service_endpoints(namespace, 'manager')
+    uiservice_endpoints = get_service_endpoints(namespace, 'uiservice')
     
     ui_endpoint=uiservice_endpoints[0]
     manager_endpoint=managerservice_endpoints[0]
@@ -119,20 +119,20 @@ def cmd():
         if username == "admin":
             rdata = data["data"]
             print(rdata)
-            data = requests.post(f"http://localhost:1337/admin/create-user", json=rdata)
+            data = requests.post(f"http://{auth_endpoint}:1337/admin/create-user", json=rdata)
             return data.text
         else:
             return jsonify({"message": "Only admin is allowed to run that command."})
     elif cmd == "delete-user":
         if username == "admin":
             rdata = data["data"]
-            data = requests.post(f"http://localhost:1337/admin/delete-user", json=rdata)
+            data = requests.post(f"http://{auth_endpoint}:1337/admin/delete-user", json=rdata)
             return data.text
         else:
             return jsonify({"message": "Only admin is allowed to run that command."})
     elif cmd == "list-users":
         if username == "admin":
-            data = requests.get(f"http://localhost:1337/admin/list-users")
+            data = requests.get(f"http://{auth_endpoint}:1337/admin/list-users")
             return data.text
         else:
             return jsonify({"message": "Only admin is allowed to run that command."})

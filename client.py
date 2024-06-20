@@ -3,13 +3,14 @@ import json
 import sys
 import getopt
 from getpass import getpass
-
+import subprocess
 
 def login():
     username = input("Username: ")
     password = getpass()
-    
-    url = 'http://localhost:1337/login'
+    result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
+    url = f'http://{minikube_ip}:30001/login' 
     headers = {'Content-Type': 'application/json'}
     data = {
         'username': username,
@@ -17,25 +18,33 @@ def login():
     }
     response = requests.post(url, headers=headers, json=data)
     
+    print(response)
+
+    #print(data["message"])
     data = json.loads(response.text)
+    if response.status_code == 401:
+        sys.exit()
+
     token = data["token"]
 
-    print(data["message"])
     if response.status_code == 401:
         sys.exit()
     else:
         return token
 
-
 def admin_menu():
     print("1. create user")
     print("2. delete user")
     print("3. list users")
-    print("4. exit")
+    print("4. list ips")
+    print("5. exit")
 
 
 def admin():
-    url = "http://localhost:1338/cmd"
+    result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
+    url = f"http://{minikube_ip}:30002/cmd"
+
     headers = {'Content-Type': 'application/json', 'Cookie': f'token={token}'}
     
     while True:
@@ -54,6 +63,9 @@ def admin():
             data = { 'cmd': 'list-users' }
             make_request(url, headers, "POST", data)
         elif choice == '4':
+            data = { 'cmd': 'view-ips' }
+            make_request(url, headers, "POST", data)
+        elif choice == '5':
             print()
             break
         else:
@@ -72,10 +84,19 @@ def print_json_values(data):
         lines.append(line)
     print('\n'.join(lines) + '\n')
 
-
 def make_request(url, headers, method, data=['notset']):
     if method == "POST":
         response = requests.post(url, headers=headers, json=data)
+    else:
+        response = requests.get(url, headers=headers)
+    data = json.loads(response.text)
+    
+    print_json_values(data)
+
+    return response.status_code
+def make_file_request(url, headers, method,files, data=['notset']):
+    if method == "POST":
+        response = requests.post(url, headers=headers,files=files,json=data)
     else:
         response = requests.get(url, headers=headers)
     data = json.loads(response.text)
@@ -117,12 +138,49 @@ def main():
 
     mode = args[0]
     if mode == "jobs":
-        if len(args) == 3:
+        if not token:
+                token = login()
+        
+        if len(args) == 4:
             if not token:
                 token = login()
-            file1, file2 = args[1], args[2]
-            print(f"Submitting a job with files: {file1} and {file2}")
+            
+            input_file,mapper_file, reducer_file = args[1], args[2],args[3]
+            print(f"Submitting a job with files: Input file:{input_file}, Mapper: {mapper_file}, Reducer: {reducer_file}")
+            num_requests = 2
+
+            files = {
+            'mapper' : (mapper_file, open(mapper_file), 'r'),
+            'reducer' : (reducer_file, open(reducer_file), 'rb')
+            }
+            data = {
+            'filename' : "word_count_data.txt"
+            }
+
+            result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
+            print("minikube ip:",minikube_ip)
+            
+           
+            try:
+                # Open the files inside the loop to reset the file pointer
+                with open(mapper_file, 'r') as mapper_file1, open(reducer_file, 'rb') as reducer_file1:
+                    files = {
+                        'mapper': (mapper_file, mapper_file1, 'text/x-python'),
+                        'reducer': (reducer_file, reducer_file1, 'text/x-python')
+                    }
+                    headers = {'Content-Type': 'application/json', 'Cookie': f'token={token}'}
+                    url = f"http://{minikube_ip}:30002/send-jobs"
+                    responst=requests.post(url=url,headers=headers,files=files,data=data)
+
+                    #print(f'Request {i + 1}: Status Code = {response.status_code}'
+                    # Process the response as needed
+                    # e.g., print(response.json())
+            except requests.exceptions.RequestException as e:
+                print(f'Request {1} failed: {e}')
+
             # TODO: Implement
+            
         elif len(args) == 1:
             if not token:
                 token = login()
@@ -147,3 +205,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
