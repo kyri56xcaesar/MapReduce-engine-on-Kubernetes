@@ -9,7 +9,7 @@ from kubernetes.client import V1EnvVar
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
+def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducefunc , no_mappers):
 
     # Load kube config from outside
     #config.load_kube_config()
@@ -29,15 +29,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
         completion_mode="Indexed",
         backoff_limit_per_index=3,
-        # pod_failure_policy=client.V1PodFailurePolicy(
-        #     rules=client.V1PodFailurePolicyRule(
-        #         action=client.V1ExecAction(
-        #             type= "DisruptionTarget"
-        #         )
-        #     )                   
-        # ) ,
-        template=client.V1PodTemplateSpec(
-            
+        template=client.V1PodTemplateSpec(          
             metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job"+jid}),
             spec=client.V1PodSpec(
                 containers=[
@@ -47,7 +39,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
-                            'echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
+                            'echo ${MYREDUCEFUNC} > /reducer_input.py && echo ${MYMAPFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
                         ],
                         ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
                         volume_mounts=[
@@ -58,8 +50,12 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         ],
                         env=[
                             client.V1EnvVar(
-                                name="MYFUNC",
-                                value=myfunc
+                                name="MYMAPFUNC",
+                                value=mymapfunc                               
+                            ),
+                            client.V1EnvVar(
+                                name="MYREDUCEFUNC",
+                                value=myreducefunc                               
                             )
                         ]
                     )
@@ -202,7 +198,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
     logger.info(f'Chunks created')
       
     # apply THE MAPPERS job
-    create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, no_workers)
+    create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
     logger.info(f'Mapper job{jid} applied')
     
             
@@ -283,4 +279,3 @@ def kube_client_main(jid, filepath, mapper, reducer):
      
     return {"jid": jid, "mapper-status": mapper_status, "reducer-status":reducer_status}
   
-

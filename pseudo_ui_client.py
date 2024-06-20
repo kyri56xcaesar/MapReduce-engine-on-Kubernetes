@@ -18,12 +18,13 @@ def send_req():
             # e.g., print(response.json())
     except requests.exceptions.RequestException as e:
         print(f'Request {i + 1} failed: {e}')
+    t.join
 
 # Paths to files
 MAPPER = 'mapper_input.py'
 REDUCER = 'reducer_input.py'
 
-FILENAME = "words.txt"
+FILENAME = "word_count_data.txt"
 
 files = {
     'mapper' : (MAPPER, open(MAPPER), 'r'),
@@ -35,9 +36,9 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "154"
-url = "http://10.244.2."+agsa+":5000/submit-job"
-num_requests = 5
+agsa = "80"
+url = "http://10.244.5."+agsa+":5000/submit-job"
+num_requests = 3
 
 for i in range(num_requests):
     t = Thread(target=send_req)
@@ -72,4 +73,3 @@ exit
 # print('Response text:', response.text)
 
 #response = requests.post("http://localhost:5000/submit-job", files=files, data=data)
-

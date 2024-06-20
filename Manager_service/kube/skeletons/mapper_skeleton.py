@@ -17,6 +17,7 @@ if __name__ == "__main__":
     import argparse
     import json
     from mapper_input import mapper
+    from reducer_input import reducer
 
     parser = argparse.ArgumentParser(description="Process input and output paths")
     parser.add_argument('-i', '--input', type=str, default="word_count_data.txt", help='Input data file path')
@@ -38,7 +39,8 @@ if __name__ == "__main__":
             mapped_lines.append(res)
             
         # flatten data inside and shuffler them 
-        shuffled_data = shuffler([item for sublist in mapped_lines for item in sublist])
+        data = shuffler([item for sublist in mapped_lines for item in sublist])
+        shuffled_data = reducer(data)
 
         with open(output_data_path, 'w') as out:
             json.dump(shuffled_data, out, indent=4, ensure_ascii=False)
