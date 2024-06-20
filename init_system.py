@@ -4,9 +4,6 @@ import re
 from kubernetes import config, client, utils
 from kubernetes.client.rest import ApiException
 
-
-
-
 def docker_ize_templated(dockerfile_name, image_name, py_skeleton_path, curr_path):
     
     DOCKERFILE_TEMPLATE_PATH = "Manager_service/kube/templates/Dockerfile.py.template"
@@ -26,50 +23,52 @@ def docker_ize_templated(dockerfile_name, image_name, py_skeleton_path, curr_pat
 
     subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile_name, curr_path])
     
-
-
-
-
-
-
-
-
 def start_minikube():
 
     subprocess.run(["minikube", "start", "--vm-driver=docker"])
     time.sleep(5)
 
-
 def build_images():
-
+    # Manager Jobs images
     docker_ize_templated("Manager_service/Dockerfile.mapper", "mapper", "Manager_service/kube/skeletons/mapper_skeleton.py", ".")
     docker_ize_templated("Manager_service/Dockerfile.reducer", "reducer", "Manager_service/kube/skeletons/reducer_skeleton.py", ".")
     
+    # Manager himself
     subprocess.run(["docker", "build", "-t", "manager", "-f", "Manager_service/Dockerfile.manager", "Manager_service/"])
 
+    # UI
+    subprocess.run(["docker", "build", "-t", "uiservice:v1", "-f", "UI_service/Dockerfile", "UI_service/"])
+    
+    # Auth
+    subprocess.run(["docker", "build", "-t", "authservice:v1", "-f", "Auth_service/Dockerfile", "Auth_service/"])
+    
     time.sleep(10)
 
-    # need to create image for Manager
+def load_all_images_to_minikube():
+    load_image_to_minikube("mapper", 3)
+    
+    load_image_to_minikube("reducer", 3)
+    
+    load_image_to_minikube("uiservice:v1", 5)
+    
+    load_image_to_minikube("authservice:v1", 5)
+    
+    load_image_to_minikube("manager", 10)
 
-def load_images_to_minikube():
+def load_image_to_minikube(image_name, time_to_sleep):
+    # Load the images to the minikube node
+    # optional if running out of minikube environment
+    subprocess.run(["minikube", "image", "load", image_name])
 
-    subprocess.run(["minikube", "image", "load", "mapper"])
-    subprocess.run(["minikube", "image", "load", "reducer"])
+    time.sleep(time_to_sleep)
 
-    # need to load image for manager
-    subprocess.run(["minikube", "image", "load", "manager"])
-
-    time.sleep(15)
-
-
-
-
-def apply_manifests(k8s_client, yaml_file):
+def apply_many_manifests(k8s_client, manifest_list):
+    for manifest in manifest_list:
+        apply_manifest(k8s_client, manifest)
+        
+def apply_manifest(k8s_client, yaml_file):
     # manager manifest
-    utils.create_from_yaml(k8s_client, yaml_file,verbose=True)
-
-
-
+    utils.create_from_yaml(k8s_client=k8s_client, yaml_file=yaml_file, verbose=True)
 
 def get_matching_pods(core_v1, namespace, pattern):
     try:
@@ -99,30 +98,29 @@ def get_pod_ip(core_v1, namespace, pod_name):
 
 
 # This main should boot up everything
-
 if __name__ == "__main__":
     
-    
-    
     # start_minikube()
+    
     
     #apply manifests
     config.load_kube_config()
     k8s_client = client.ApiClient()
-    yaml_file = 'manifests/manager-manifest.yaml'
+    core_v1 = client.CoreV1Api()
     namespace = 'default'
+    
+    manifests = ['manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml']
     pattern = r'^manager-\d+$'
     manager_pod_name = 'manager'
-    core_v1 = client.CoreV1Api()
 
-    
-    
+
+    # perhaps switch to minikube environment?
     build_images()
     #load_images_to_minikube()
-    apply_manifests(k8s_client, yaml_file)
+    apply_many_manifests(k8s_client, manifests)
+    #apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")
     
     time.sleep(4)
-    
     
     pods = get_matching_pods(core_v1, namespace, pattern)
     
@@ -131,9 +129,3 @@ if __name__ == "__main__":
     for pod in pods:
         pod_ip = get_pod_ip(core_v1, namespace, pod)
         print(pod_ip)
-    
-
-
-    
-
-

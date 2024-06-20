@@ -5,12 +5,24 @@ import getopt
 from getpass import getpass
 import subprocess
 
+
+#result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
+#ip = minikube_ip    
+
+ip = "localhost"
+AUTH_PORT = "30001"
+UI_PORT = "30002"
+MANAGER_PORT = "5000"
+datasets = ["word_count_data.txt"]
+
+# LOGGING IN FROM AUTH SERVICE
 def login():
     username = input("Username: ")
     password = getpass()
-    result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
-    url = f'http://{minikube_ip}:30001/login' 
+    
+
+    url = f'http://{ip}:{AUTH_PORT}/login' 
     headers = {'Content-Type': 'application/json'}
     data = {
         'username': username,
@@ -41,9 +53,8 @@ def admin_menu():
 
 
 def admin():
-    result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
-    url = f"http://{minikube_ip}:30002/cmd"
+    # talking to UI 
+    url = f"http://{ip}:{UI_PORT}/cmd"
 
     headers = {'Content-Type': 'application/json', 'Cookie': f'token={token}'}
     
@@ -106,10 +117,15 @@ def make_file_request(url, headers, method,files, data=['notset']):
     return response.status_code
 
 
+def list_available_datasets():
+    for index, dataset in enumerate(datasets):
+        print(f'{index + 1}. dataset: {dataset}')
+
 def usage():
     print('''
 Usage: python client.py [MODE]|[OPTION]
-    jobs [mapper reducer],  submit a job
+    datafiles
+    jobs [filename, mapper reducer],  submit a job
     jobs,                   view jobs
     admin,                  access admin interface
     -h,	display this help text and exit
@@ -145,23 +161,10 @@ def main():
             if not token:
                 token = login()
             
-            input_file,mapper_file, reducer_file = args[1], args[2],args[3]
+            input_file, mapper_file, reducer_file = args[1], args[2], args[3]
             print(f"Submitting a job with files: Input file:{input_file}, Mapper: {mapper_file}, Reducer: {reducer_file}")
-            num_requests = 2
 
-            files = {
-            'mapper' : (mapper_file, open(mapper_file), 'r'),
-            'reducer' : (reducer_file, open(reducer_file), 'rb')
-            }
-            data = {
-            'filename' : "word_count_data.txt"
-            }
 
-            result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
-            print("minikube ip:",minikube_ip)
-            
-           
             try:
                 # Open the files inside the loop to reset the file pointer
                 with open(mapper_file, 'r') as mapper_file1, open(reducer_file, 'rb') as reducer_file1:
@@ -169,13 +172,16 @@ def main():
                         'mapper': (mapper_file, mapper_file1, 'text/x-python'),
                         'reducer': (reducer_file, reducer_file1, 'text/x-python')
                     }
-                    headers = {'Content-Type': 'application/json', 'Cookie': f'token={token}'}
-                    url = f"http://{minikube_ip}:30002/send-jobs"
-                    responst=requests.post(url=url,headers=headers,files=files,data=data)
-
-                    #print(f'Request {i + 1}: Status Code = {response.status_code}'
-                    # Process the response as needed
-                    # e.g., print(response.json())
+                    data = {
+                        'filename' : "word_count_data.txt"
+                    }
+                    
+                    url = f"http://{ip}:{UI_PORT}/send-jobs"
+                    response=requests.post(url=url, files=files, data=data, cookies={'token': token})
+                    
+                    print(f'Status Code = {response.status_code}')
+                    print(response.json())
+                    
             except requests.exceptions.RequestException as e:
                 print(f'Request {1} failed: {e}')
 
@@ -198,6 +204,10 @@ def main():
         else:
             usage()
             sys.exit(2)
+    elif mode == "datafiles":
+        if not token:
+            token = login()
+        list_available_datasets()
     else:
         usage()
         sys.exit(2)

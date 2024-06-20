@@ -16,6 +16,8 @@ key = RSA.generate(2048)
 PRIVATE_KEY = key.export_key()
 PUBLIC_KEY = key.publickey().export_key()
 
+PORT = "1337"
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -30,22 +32,22 @@ class User(db.Model):
 def create_user(username, password):
     user = User.query.filter_by(username=username).first()
     if user:
-        return jsonify({"message":"User already exists."})
+        return jsonify({"auth_message":"User already exists."})
 
     user = User(username, password)
     db.session.add(user)
     db.session.commit()
-    return jsonify({"message":"User created successfully."})
+    return jsonify({"auth_message":"User created successfully."})
 
 
 def delete_user(username):
     user = User.query.filter_by(username=username).first()
     if not user:
-        return jsonify({"message":"User does not exist."})
+        return jsonify({"auth_message":"User does not exist."})
 
     db.session.delete(user)
     db.session.commit()
-    return jsonify({"message":"User deleted successfully."})
+    return jsonify({"auth_message":"User deleted successfully."})
 
 
 def list_users():
@@ -71,15 +73,15 @@ def generate_token(username):
 
 @app.route("/healthz", methods=["GET"])
 def healthz():
-    return {"status":"I am alive."}
+    return {"auth_status":"I am alive."}
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if session:
-        return jsonify({"message":"Please log out first."})
+        return jsonify({"auth_message":"Please log out first."})
 
     if request.method == "GET":
-        return jsonify({"message":"Please login."})
+        return jsonify({"auth_message":"Please login."})
 
     data = request.get_json()
     username = data.get('username')
@@ -90,20 +92,20 @@ def login():
     if user and user.password == password:
         token = generate_token(username)
         session["token"] = token
-        return jsonify({"message":f"Hello {username}.", "token":token})
+        return jsonify({"auth_message":f"Hello {username}.", "token":token})
     else:
-        return jsonify({"message":"Login failed."}), 401
+        return jsonify({"auth_message":"Login failed."}), 401
 
 
 @app.route("/logout")
 def logout():
     session.pop("token", None)
-    return jsonify({"message":"Bye."})
+    return jsonify({"auth_message":"Bye."})
 
 
 @app.route("/pubkey")
 def get_pubkey():
-    return jsonify({"message":b64encode(PUBLIC_KEY).decode()})
+    return jsonify({"auth_message":b64encode(PUBLIC_KEY).decode()})
 
 
 @app.route("/admin/create-user", methods=["POST"])
@@ -132,4 +134,4 @@ if __name__ == "__main__":
         create_user("admin", "admin")
         create_user("guest", "guest")
 
-    app.run(host='0.0.0.0', port=1337, debug=True) # TODO: disable
+    app.run(host='0.0.0.0', port=PORT, debug=False) # TODO: disable

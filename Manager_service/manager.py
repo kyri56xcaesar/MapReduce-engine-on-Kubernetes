@@ -26,8 +26,13 @@ import db.Database as db
 #
 #
 load_dotenv()
+
+PORT = os.environ['MANAGER_PORT']
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
 
 def create_app():
     
@@ -47,23 +52,6 @@ def main():
     return {"status" : "hello world"}
 
 
-
-
-# When the job parameters are ready,
-# the following stuff need to be configured
-# Coordination!
-# input file should be read, and split
-# amount of workers should be estimated
-# 
-# assignment of map shuffle and reduce to the workers
-#
-# await results
-
-    
-    
-    
-
-
 @app.route("/submit-job/", methods=["POST"])
 @app.route("/submit-job", methods=["POST"])
 def configure_job():
@@ -72,16 +60,15 @@ def configure_job():
     # check all inputs 
     # validate inputs
     if not request.files or ('mapper' not in request.files and 'reducer' not in request.files):
-        return jid_json_formatted_message('-1', "message", "must provide map/reduce files", 400)
+        return jid_json_formatted_message('-1', "mngr_message", "must provide map/reduce files", 400)
         
     filename = request.form.get('filename')
        
     if not filename:
-        return jsonify({"message":"must provide the filename"}), 400
+        return jsonify({"mngr_message":"must provide the filename"}), 400
     
     # if all good..
     # create a new "job" placeholder, job holds a job conf as well.
-
     try:
 
         map_file = request.files['mapper']
@@ -114,7 +101,7 @@ def configure_job():
         logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job
-        return jid_json_formatted_message(str(jid), "message", "files received!", 200)
+        return jid_json_formatted_message(str(jid), "mngr_message", f"Job submitted successfully: {job_status}", 200)
     
     except Exception as e:
         print(f'Exception: {e}')
@@ -130,17 +117,17 @@ def configure_job():
 def setup_job_mapper(jid='-1'):
 
     if not request.files or 'mapper' not in request.files:
-        return jid_json_formatted_message(jid=jid, type="message", content="must provide mapper file", code=400)
+        return jid_json_formatted_message(jid=jid, type="mngr_message", content="must provide mapper file", code=400)
 
     mapper_file = request.files['mapper'].read().decode("utf-8")
     
     success = db.update_job_mapper_by_jid(jid, mapper_file)    
     
     if success:
-        return jid_json_formatted_message(jid, "message", "mapper updated successfully", 200)
+        return jid_json_formatted_message(jid, "mngr_message", "mapper updated successfully", 200)
     
     
-    return jid_json_formatted_message(jid, "message", "mapper not updated", 400)
+    return jid_json_formatted_message(jid, "mngr_message", "mapper not updated", 400)
 
     
 
@@ -150,17 +137,17 @@ def setup_job_mapper(jid='-1'):
 def setup_job_reducer(jid='-1'):
 
     if not request.files or 'reducer' not in request.files:
-        return jid_json_formatted_message(jid, "message", "must provide reducer file", 400)
+        return jid_json_formatted_message(jid, "mngr_message", "must provide reducer file", 400)
     
     reducer_file = request.files['reducer'].read().decode("utf-8")
     
     success = db.update_job_reducer_by_jid(jid, reducer_file)    
     
     if success:
-        return jid_json_formatted_message(jid, "message", "reducer updated successfully", 200)
+        return jid_json_formatted_message(jid, "mngr_message", "reducer updated successfully", 200)
     
     
-    return jid_json_formatted_message(jid, "message", "reducer not updated", 400)
+    return jid_json_formatted_message(jid, "mngr_message", "reducer not updated", 400)
 
 # Edit a specific jid filename
 @app.route("/setup/filename/<jid>", methods=["POST"])
@@ -169,15 +156,15 @@ def setup_job_filename(jid='-1'):
     filename = request.form.get('filename')
     
     if not filename:
-        return jid_json_formatted_message(jid, "message", "must provide filename", 400)
+        return jid_json_formatted_message(jid, "mngr_message", "must provide filename", 400)
     
     success = db.update_job_filename_by_jid(jid, filename)    
     
     if success:
-        return jid_json_formatted_message(jid, "message", "filename updated successfully", 200)
+        return jid_json_formatted_message(jid, "mngr_message", "filename updated successfully", 200)
     
     
-    return jid_json_formatted_message(jid, "message", "filename not updated", 400)
+    return jid_json_formatted_message(jid, "mngr_message", "filename not updated", 400)
 
 
 # 
@@ -211,8 +198,5 @@ def check_jid(jid):
 
 
 if __name__ == "__main__":
-
-    #kube.kube_client.init_images()
     
-    PORT = os.environ['SERVICE_PORT']
     app.run(host='0.0.0.0', port=PORT, debug=False)

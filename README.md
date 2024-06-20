@@ -1,5 +1,25 @@
 # Project 2024 katanemimena K8S map reduce
 
+
+## HOW TO USE so far.
+
+
+run: minikube start --vm-driver=docker 
+    or make sure it is running: minikube status
+
+run: python or python3 init_system.py
+
+use: client.py 
+
+
+user: guest password
+admin: admin password
+
+*Warning* On windows for some reason requests aren't pulled through the kube proxy, *Solution*: port forward the UI and AUTH endpoints like:
+On 2 seperate terminals:
+    - kubectl port-forward service/authservice 30001:1337
+    - kubectl port-forward service/uiservice 30002:1338
+
 ## To-do
 
 ### User Interface
@@ -36,7 +56,7 @@
 #### Workers are spawned and monitored by the Manager Service
 - [x] API set
 - [x] Job Configuring
-- [ ] Hold Jobs in a db
+- [ ] Hold Jobs in a db, Propably will use ETCD for this
 - [x] Formatting/setup
 - [x] Initialization, talk to cluster.
 - [x] Instantiate images on kubernetes and then apply logic to dynamically change inp/out
@@ -46,13 +66,15 @@
 - [ ] provide access for Job status view
 
 ### Shared File System
-#### Basically K8S node/pod configurement (PVC: persistent volume claims etc)
-- [ ] K8S builtin setup...
+#### (PV & PVCs: persistent volume and persistent volume claims)
+- [x] Kubernetes PV and PVCs. ON Manager
 
 ### Distributed Data Service
-#### Fault tolerance handling, can be Zookeeper or the K8S Built in features
-- [ ] K8S builting setup...
-
+#### Fault tolerance! etcd Shall be used and  configured
+- [x] etcd documentation reading
+- [ ] etcd installation
+- [ ] etcd configuration
+- [ ] etcd testing
  
 
 

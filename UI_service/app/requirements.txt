@@ -2,3 +2,5 @@ flask
 requests
 pyjwt
 cryptography
+kubernetes
+python-dotenv
