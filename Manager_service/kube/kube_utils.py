@@ -74,7 +74,7 @@ def concatenate_json_objects(input_file, output_file):
     combined_data = {}
 
     with open(input_file, 'r') as file:
-        for line in file:
+        for line in output_file:
             # Strip leading/trailing whitespace and check if line is not empty
             line = line.strip()
             if line:

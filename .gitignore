@@ -5,3 +5,4 @@ Manager_service/examples/*.out
 __pycache__
 test
 todo
+*.out
