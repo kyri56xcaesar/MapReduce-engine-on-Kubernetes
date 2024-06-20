@@ -1,30 +1,10 @@
+from threading import Thread
 import requests
 import time
 
 # response = requests.get(url)
 
-
-# Paths to files
-MAPPER = 'mapper_input.py'
-REDUCER = 'reducer_input.py'
-
-FILENAME = "word_count_data.txt"
-
-files = {
-    'mapper' : (MAPPER, open(MAPPER), 'r'),
-    'reducer' : (REDUCER, open(REDUCER), 'rb')
-    
-}
-
-data = {
-    'filename' : FILENAME
-}
-
-agsa = "1"
-url = "http://10.244.1."+agsa+":5000/submit-job"
-num_requests = 1
-
-for i in range(num_requests):
+def send_req():
     try:
         # Open the files inside the loop to reset the file pointer
         with open(MAPPER, 'r') as mapper_file, open(REDUCER, 'rb') as reducer_file:
@@ -38,6 +18,31 @@ for i in range(num_requests):
             # e.g., print(response.json())
     except requests.exceptions.RequestException as e:
         print(f'Request {i + 1} failed: {e}')
+
+# Paths to files
+MAPPER = 'mapper_input.py'
+REDUCER = 'reducer_input.py'
+
+FILENAME = "words.txt"
+
+files = {
+    'mapper' : (MAPPER, open(MAPPER), 'r'),
+    'reducer' : (REDUCER, open(REDUCER), 'rb')
+    
+}
+
+data = {
+    'filename' : FILENAME
+}
+
+agsa = "154"
+url = "http://10.244.2."+agsa+":5000/submit-job"
+num_requests = 10
+
+for i in range(num_requests):
+    t = Thread(target=send_req)
+    t.daemon = True
+    t.start()
 
 
 

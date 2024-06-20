@@ -47,7 +47,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
-                            'sleep 30 && echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
+                            'echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
                         ],
                         ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
                         volume_mounts=[
@@ -114,7 +114,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
                             image_pull_policy="IfNotPresent",
                             command=[
                                 "sh", "-c",
-                                'sleep 20 && echo "${MYFUNC}" > /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/'+jid+'/reducer/in/reducer-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/reducer/out/reducer-${JOB_COMPLETION_INDEX}.out'
+                                'echo "${MYFUNC}" > /reducer_input.py && python3 /reducer_skeleton.py -i /mnt/data/'+jid+'/reducer/in/reducer-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/reducer/out/reducer-${JOB_COMPLETION_INDEX}.out'
                             ],
                             ports=[client.V1ContainerPort(container_port=8081, name="reducer")],
                             volume_mounts=[
