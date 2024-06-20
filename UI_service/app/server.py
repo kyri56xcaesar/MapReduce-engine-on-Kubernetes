@@ -154,20 +154,20 @@ def cmd():
         if username == "admin":
             rdata = data["data"]
             logger.info(rdata)
-            data = requests.post(f"http://{auth_endpoint}:1337/admin/create-user", json=rdata)
+            data = requests.post(f"http://{auth_endpoint}/admin/create-user", json=rdata)
             return data.text
         else:
             return jsonify({"ui_message": "Only admin is allowed to run that command."})
     elif cmd == "delete-user":
         if username == "admin":
             rdata = data["data"]
-            data = requests.post(f"http://{auth_endpoint}:1337/admin/delete-user", json=rdata)
+            data = requests.post(f"http://{auth_endpoint}/admin/delete-user", json=rdata)
             return data.text
         else:
             return jsonify({"ui_message": "Only admin is allowed to run that command."})
     elif cmd == "list-users":
         if username == "admin":
-            data = requests.get(f"http://{auth_endpoint}:1337/admin/list-users")
+            data = requests.get(f"http://{auth_endpoint}/admin/list-users")
             return data.text
         else:
             return jsonify({"ui_message": "Only admin is allowed to run that command."})
