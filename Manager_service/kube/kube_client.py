@@ -28,7 +28,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         completions=no_mappers,  # Total number of mapper jobs to complete
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
         completion_mode="Indexed",
-        backoff_limit_per_index=4,
+        backoff_limit_per_index=3,
         # pod_failure_policy=client.V1PodFailurePolicy(
         #     rules=client.V1PodFailurePolicyRule(
         #         action=client.V1ExecAction(
@@ -47,7 +47,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
-                            'echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
+                            'sleep 20 && echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
                         ],
                         ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
                         volume_mounts=[
@@ -64,7 +64,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         ]
                     )
                 ],
-                restart_policy="Never",
+                restart_policy="OnFailure",
                 volumes=[
                     client.V1Volume(
                         name="manager-storage",
@@ -191,7 +191,8 @@ def kube_client_main(jid, filepath, mapper, reducer):
     filepath = "kube/examples/" + filepath
 
     fsize = get_file_size(filepath)
-    no_workers = estimate_num_mappers(fsize)
+    no_workers = split_datafile(filepath, jid) + 1
+
   
     logger.info(f'File size: {fsize}')
     logger.info(f'# workers: {no_workers}')
@@ -199,7 +200,6 @@ def kube_client_main(jid, filepath, mapper, reducer):
 
     # this should split the files in the /mnt path
     # create directories in the PV for the given JID
-    split_datafile(filepath, jid)
     logger.info(f'Chunks created')
       
     # apply THE MAPPERS job

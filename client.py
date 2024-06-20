@@ -6,11 +6,11 @@ from getpass import getpass
 import subprocess
 
 
-#result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
-#ip = minikube_ip    
+result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
+ip = minikube_ip    
 
-ip = "localhost"
+# ip = "localhost"
 AUTH_PORT = "30001"
 UI_PORT = "30002"
 MANAGER_PORT = "5000"
@@ -173,7 +173,7 @@ def main():
                         'reducer': (reducer_file, reducer_file1, 'text/x-python')
                     }
                     data = {
-                        'filename' : "word_count_data.txt"
+                        'filename' : input_file
                     }
                     
                     url = f"http://{ip}:{UI_PORT}/send-jobs"
