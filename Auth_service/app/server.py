@@ -69,6 +69,9 @@ def generate_token(username):
     token = jwt.encode(payload, PRIVATE_KEY, algorithm='RS256')
     return token
 
+@app.route("/healthz", methods=["GET"])
+def healthz():
+    return {"status":"I am alive."}
 
 @app.route("/login", methods=["GET", "POST"])
 def login():

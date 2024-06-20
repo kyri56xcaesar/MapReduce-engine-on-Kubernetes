@@ -58,6 +58,10 @@ def get_service_endpoints(namespace, service_name):
 
     return endpoint_addresses
 
+@app.route("/healthz", methods=["GET"])
+def healthz():
+    return {"status":"I am alive."}
+
 @app.route("/send-jobs", methods=["POST"])
 def send_jobs():
     #data = request.get_json()

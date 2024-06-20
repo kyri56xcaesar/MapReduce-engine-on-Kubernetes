@@ -3,7 +3,6 @@ kind: Pod
 metadata:
   name: keep-alive-pod
 spec:
-  serviceAccountName: job-creator-sa  # Service account added here
   containers:
   - name: keep-alive-container
     image: python:3.9
