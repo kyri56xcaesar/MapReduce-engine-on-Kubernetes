@@ -105,6 +105,7 @@ def send_jobs():
     
     managerservice_endpoints = get_service_endpoints(namespace, 'manager')
     manager_endpoint = managerservice_endpoints[0]
+    logger.info(f'Manager endpoints: {managerservice_endpoints}')
 
     mapper_file = request.files['mapper']
     reducer_file = request.files['reducer']

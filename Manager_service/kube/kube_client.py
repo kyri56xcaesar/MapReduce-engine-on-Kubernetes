@@ -39,7 +39,8 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducef
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
-                            'echo ${MYREDUCEFUNC} > /reducer_input.py && echo ${MYMAPFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
+                            #'echo ${MYREDUCEFUNC} > /reducer_input.py',
+                            'echo ${MYMAPFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
                         ],
                         ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
                         volume_mounts=[
@@ -148,7 +149,10 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
     )
     return api_response
 
-def check_job_status(api_instance, job_name, namespace):
+def check_job_status(job_name, namespace):
+    
+    api_instance = client.BatchV1Api()
+
     w = watch.Watch()
     for event in w.stream(api_instance.list_namespaced_job, namespace=namespace, timeout_seconds=0):
         job = event['object']
@@ -187,27 +191,25 @@ def kube_client_main(jid, filepath, mapper, reducer):
     filepath = "kube/examples/" + filepath
     logger.info(f'FILEPATH: {filepath}')
 
+
+    # this should split the files in the /mnt path
+    # create directories in the PV for the given JID
     fsize = get_file_size(filepath)
     no_workers = split_datafile(filepath, jid) + 1
 
-  
+    logger.info(f'Chunks created')
+
     logger.info(f'File size: {fsize}')
     logger.info(f'# workers: {no_workers}')
   
 
-    # this should split the files in the /mnt path
-    # create directories in the PV for the given JID
-    logger.info(f'Chunks created')
-  
-
-      
     # apply THE MAPPERS job
     create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
     logger.info(f'Mapper job{jid} applied')
     
             
     logger.info('Waiting for mapper job'+jid+' to complete.')
-    mapper_status = check_job_status(api_instance=batch_v1, job_name="mapper-job"+jid, namespace=namespace)
+    mapper_status = check_job_status(job_name="mapper-job"+jid, namespace=namespace)
     logger.info(f"Status {mapper_status}")
  
     # apply SHUFFLE 
@@ -268,7 +270,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
         create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
         
         logger.info(f'waiting for reducer-job{jid}')
-        reducer_status = check_job_status(api_instance=batch_v1, job_name="reducer-job"+jid, namespace=namespace)
+        reducer_status = check_job_status(job_name="reducer-job"+jid, namespace=namespace)
         logger.info(f'reducer_status: {reducer_status}')
     
     # save output only and cleanup.

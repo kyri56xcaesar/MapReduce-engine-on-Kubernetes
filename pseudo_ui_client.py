@@ -36,9 +36,9 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "80"
-url = "http://10.244.5."+agsa+":5000/submit-job"
-num_requests = 3
+agsa = "277"
+url = "http://10.244.2."+agsa+":5000/submit-job"
+num_requests = 2
 
 for i in range(num_requests):
     t = Thread(target=send_req)
