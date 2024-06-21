@@ -191,10 +191,13 @@ def check_jid(jid):
     
     job: Job = db.get_job_by_id(jid)
     
-    if not job:
-        return jsonify({"status":"does't exist"})
+    # if not job:
+    #     return jsonify({"status":"does't exist"})
     
-    return job.to_json()
+    mapper_job_status = check_job_status("mapper-job"+jid, 'default')
+    reducer_job_status = check_job_status("reducer-job"+jid, 'default')
+    
+    return jid_json_formatted_message(jid, "mngr_message", f"mapper_job_status: {mapper_job_status}\nreducer_job_status: {reducer_job_status}", 200)
 
 
 @app.route("/get-job-result/<jid>", methods=["GET"])

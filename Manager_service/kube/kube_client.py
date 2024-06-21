@@ -2,6 +2,7 @@ import json
 from math import ceil
 from .kube_utils import *
 import logging
+from time import sleep
 from kubernetes import client, config
 from kubernetes import client, config, watch
 from kubernetes.client import V1EnvVar
@@ -149,7 +150,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
     )
     return api_response
 
-def check_job_status(job_name, namespace):
+def wait_for_job_done(job_name, namespace):
     
     api_instance = client.BatchV1Api()
 
@@ -166,6 +167,25 @@ def check_job_status(job_name, namespace):
                 w.stop()
                 return False
             
+def check_job_status(job_name, namespace):
+    
+    api_instance = client.BatchV1Api()
+    thread = api_instance.list_namespaced_job(namespace, async_req=True)
+    joblist = thread.get()
+    
+    logger.info(joblist)
+    
+    for job in joblist.items:
+        if job.metadata.name == job_name:
+            job_status = job.status
+            logger.info(f"Job {job_name} status: {job_status}")
+
+            return job_status
+    
+    logger.info(f"Job {job_name} not found in namespace {namespace}.")
+    return None
+           
+           
 def delete_job(api_instance, job_name):
     api_response = api_instance.delete_namespaced_job(
         name=job_name,
@@ -209,7 +229,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
     
             
     logger.info('Waiting for mapper job'+jid+' to complete.')
-    mapper_status = check_job_status(job_name="mapper-job"+jid, namespace=namespace)
+    mapper_status = wait_for_job_done(job_name="mapper-job"+jid, namespace=namespace)
     logger.info(f"Status {mapper_status}")
  
     # apply SHUFFLE 
@@ -262,7 +282,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
             with open(reducer_file_path, 'w') as out:
                 json.dump(reducer_data, out, indent=1, ensure_ascii=False)
             
-        logger.info(f'reducer_data: {reducer_data}')
+        #logger.info(f'reducer_data: {reducer_data}')
         
             
         # apply the REDUCERS job
@@ -270,14 +290,13 @@ def kube_client_main(jid, filepath, mapper, reducer):
         create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
         
         logger.info(f'waiting for reducer-job{jid}')
-        reducer_status = check_job_status(job_name="reducer-job"+jid, namespace=namespace)
+        reducer_status = wait_for_job_done(job_name="reducer-job"+jid, namespace=namespace)
         logger.info(f'reducer_status: {reducer_status}')
     
     # save output only and cleanup.
     # cleanup pv with given jid
     logger.info(f'cleaning up')
     cleanUp_pv(jid)
-    
     
     # delete jobs
     delete_job(batch_v1, "mapper-job"+jid)
