@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: job-creator-sa
-  namespace: default
+  namespace: dpyravlos
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
@@ -18,7 +18,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: job-creator-binding
-  namespace: default
+  namespace: dpyravlos
 subjects:
 - kind: ServiceAccount
   name: job-creator-sa
@@ -32,6 +32,7 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: manager-pv
+  namespace: dpyravlos
 spec:
   capacity:
     storage: 1Gi
@@ -44,6 +45,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: keep-alive-pod-pvc
+  namespace: dpyravlos
 spec:
   accessModes:
     - ReadWriteMany
@@ -55,6 +57,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: manager
+  namespace: dpyravlos
   labels:
     app: managers
 spec:
@@ -70,6 +73,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: manager
+  namespace: dpyravlos
 spec:
   serviceName: "managers"
   replicas: 1
@@ -84,8 +88,7 @@ spec:
       serviceAccountName: job-creator-sa  # Service account added here
       containers:
         - name: mapreduce
-          imagePullPolicy: Never
-          image: manager:latest
+          image: gkonofaos/manager:latest
           command: ["python3"]
           args: ["/manager.py"]
           ports:

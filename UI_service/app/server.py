@@ -21,7 +21,7 @@ AUTH_PORT = os.environ['AUTH_PORT']
 MANAGER_PORT = os.environ['MANAGER_PORT']
 isLocal = os.environ['ISLOCAL']
 
-namespace = 'default'
+namespace = 'dpyravlos'
 
 
 def get_service_endpoints(namespace, service_name):
@@ -45,22 +45,6 @@ def get_service_endpoints(namespace, service_name):
 
     return endpoint_addresses
 
-
-if isLocal == "true":
-
-    auth_endpoint = "localhost:" + AUTH_PORT
-    manager_endpoint = "localhost:" + MANAGER_PORT
-else:
-    authservice_endpoints = get_service_endpoints(namespace, 'authservice')
-    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
-    
-    manager_endpoint = managerservice_endpoints[0]
-    auth_endpoint = authservice_endpoints[0] 
-
-
-logger.info(f'IsLocal: {isLocal}')
-logger.info(f'Auth_endpoint: {auth_endpoint}')
-logger.info(f'Manager_endpoint: {manager_endpoint}')
 
 def get_pubkey():
     auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
@@ -143,6 +127,9 @@ def cmd():
     auth_endpoint=auth_endpoint_list[0]
     ui_endpoint_list=get_service_endpoints(namespace,'uiservice')
     ui_endpoint=ui_endpoint_list[0]
+    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
+    manager_endpoint = managerservice_endpoints[0]
+
     data = request.get_json()
     headers = request.headers
 

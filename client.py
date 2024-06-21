@@ -4,14 +4,13 @@ import sys
 import getopt
 from getpass import getpass
 import subprocess
-
+from kubernetes import client, config
 
 #result_fetch_ip = subprocess.run(['minikube', 'ip'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 #minikube_ip = result_fetch_ip.stdout.decode('utf-8').strip()
 #ip = minikube_ip    
 
-ip = "localhost"
-AUTH_PORT = "30001"
+AUTH_PORT = "30003"
 UI_PORT = "30002"
 MANAGER_PORT = "5000"
 datasets = ["word_count_data.txt", "word_count_small.txt"]
@@ -21,7 +20,8 @@ def login():
     username = input("Username: ")
     password = getpass()
     
-
+    ip=get_node_ip_for_service("authservice","dpyravlos")
+    print(ip)
     url = f'http://{ip}:{AUTH_PORT}/login' 
     headers = {'Content-Type': 'application/json'}
     data = {
@@ -44,6 +44,41 @@ def login():
     else:
         return token
 
+def get_node_ip_for_service(service_name, namespace='dpyravlos'):
+    # Load Kubernetes configuration from default location
+    config.load_kube_config()
+
+    # Create Kubernetes API client
+    api = client.CoreV1Api()
+
+    try:
+        # Retrieve service information
+        service = api.read_namespaced_service(service_name, namespace)
+        
+        # Retrieve pod selector labels
+        selector = service.spec.selector
+
+        # Find pods matching the selector
+        pods = api.list_namespaced_pod(namespace, label_selector=','.join(f"{key}={value}" for key, value in selector.items()))
+
+        if pods.items:
+            # Assuming the first pod in the list is sufficient for demonstration
+            pod = pods.items[0]
+
+            # Get node name where the pod is running
+            node_name = pod.spec.node_name
+            
+            # Get node IP address
+            node_info = api.read_node(node_name)
+            node_ip = next((address.address for address in node_info.status.addresses if address.type == 'InternalIP'), None)
+
+            return node_ip
+        else:
+            return None
+    except Exception as e:
+        print(f"Error retrieving node IP for service {service_name}: {e}")
+        return None
+
 def admin_menu():
     print("1. create user")
     print("2. delete user")
@@ -53,7 +88,8 @@ def admin_menu():
 
 
 def admin():
-    # talking to UI 
+    # talking to UI
+    ip=get_node_ip_for_service("uiservice","dpyravlos")
     url = f"http://{ip}:{UI_PORT}/cmd"
 
     headers = {'Content-Type': 'application/json', 'Cookie': f'token={token}'}
@@ -215,4 +251,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
 
