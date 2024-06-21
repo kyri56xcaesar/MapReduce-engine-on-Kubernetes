@@ -192,13 +192,17 @@ def kube_client_main(jid, filepath, mapper, reducer):
     filepath = "kube/examples/" + filepath
     logger.info(f'FILEPATH: {filepath}')
 
-    #fsize = get_file_size(filepath)
-    #logger.info(f'File size: {fsize}')
-    
+    fsize = get_file_size(filepath)
+    no_workers = split_datafile(filepath, jid) + 1
+
+  
+    logger.info(f'File size: {fsize}')
+    logger.info(f'# workers: {no_workers}')
+  
+
     # this should split the files in the /mnt path
     # create directories in the PV for the given JID
-   # no_workers = split_datafile(filepath, jid) + 1
-    #logger.info(f'# workers: {no_workers}')
+    logger.info(f'Chunks created')
   
 
       
