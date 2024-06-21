@@ -9,7 +9,7 @@ from kubernetes.client import V1EnvVar
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
+def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducefunc , no_mappers):
 
     # Load kube config from outside
     #config.load_kube_config()
@@ -28,16 +28,8 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
         completions=no_mappers,  # Total number of mapper jobs to complete
         parallelism=no_mappers,  # Number of mapper jobs to run in parallel
         completion_mode="Indexed",
-        backoff_limit_per_index=4,
-        # pod_failure_policy=client.V1PodFailurePolicy(
-        #     rules=client.V1PodFailurePolicyRule(
-        #         action=client.V1ExecAction(
-        #             type= "DisruptionTarget"
-        #         )
-        #     )                   
-        # ) ,
-        template=client.V1PodTemplateSpec(
-            
+        backoff_limit_per_index=3,
+        template=client.V1PodTemplateSpec(          
             metadata=client.V1ObjectMeta(labels={"app": "mappers", "job-name": "mapper-job"+jid}),
             spec=client.V1PodSpec(
                 containers=[
@@ -47,7 +39,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
-                            'echo ${MYFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
+                            'echo ${MYREDUCEFUNC} > /reducer_input.py && echo ${MYMAPFUNC} > /mapper_input.py && python3 /mapper_skeleton.py -i /mnt/data/'+jid+'/mapper/in/mapper-${JOB_COMPLETION_INDEX}.in -o /mnt/data/'+jid+'/shuffler/in/mapper-${JOB_COMPLETION_INDEX}.out'
                         ],
                         ports=[client.V1ContainerPort(container_port=8080, name="mapper")],
                         volume_mounts=[
@@ -58,8 +50,12 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, myfunc, no_mappers):
                         ],
                         env=[
                             client.V1EnvVar(
-                                name="MYFUNC",
-                                value=myfunc
+                                name="MYMAPFUNC",
+                                value=mymapfunc                               
+                            ),
+                            client.V1EnvVar(
+                                name="MYREDUCEFUNC",
+                                value=myreducefunc                               
                             )
                         ]
                     )
@@ -131,7 +127,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
                             ]
                         )
                     ],
-                    restart_policy="OnFailure",
+                    restart_policy="Never",
                     volumes=[
                         client.V1Volume(
                             name="reducer-storage",
@@ -157,13 +153,12 @@ def check_job_status(api_instance, job_name, namespace):
     for event in w.stream(api_instance.list_namespaced_job, namespace=namespace, timeout_seconds=0):
         job = event['object']
         if job.metadata.name == job_name:
-            if job.status.succeeded is not None and job.status.succeeded >= 1:
-                logger.info(f"Job {job_name} completed.")
+            if job.status.succeeded is not None and job.status.succeeded >= job.spec.completions:
+                logger.info(f"Job {job.metadata.name} completed.")
                 w.stop()
-                return True
-                
-            elif job.status.failed is not None and job.status.failed >= 1:
-                logger.info(f"Job {job_name} failed.")
+                return True               
+            elif job.status.failed is not None and job.status.failed >= job.spec.backoff_limit_per_index:
+                logger.info(f"Job {job.metadata.name} failed.")
                 w.stop()
                 return False
             
@@ -207,7 +202,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
 
       
     # apply THE MAPPERS job
-    create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, no_workers)
+    create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
     logger.info(f'Mapper job{jid} applied')
     
             
@@ -288,4 +283,3 @@ def kube_client_main(jid, filepath, mapper, reducer):
      
     return {"jid": jid, "mapper-status": mapper_status, "reducer-status":reducer_status}
   
-

@@ -1,8 +1,24 @@
+from threading import Thread
 import requests
 import time
 
 # response = requests.get(url)
 
+def send_req():
+    try:
+        # Open the files inside the loop to reset the file pointer
+        with open(MAPPER, 'r') as mapper_file, open(REDUCER, 'rb') as reducer_file:
+            files = {
+                'mapper': (MAPPER, mapper_file, 'text/x-python'),
+                'reducer': (REDUCER, reducer_file, 'text/x-python')
+            }
+            response = requests.post(url=url, files=files, data=data)
+            print(f'Request {i + 1}: Status Code = {response.status_code}')
+            # Process the response as needed
+            # e.g., print(response.json())
+    except requests.exceptions.RequestException as e:
+        print(f'Request {i + 1} failed: {e}')
+    t.join
 
 # Paths to files
 MAPPER = 'mapper_input.py'
@@ -20,25 +36,17 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "1"
-url = "http://10.244.1."+agsa+":5000/submit-job"
-num_requests = 1
+agsa = "80"
+url = "http://10.244.5."+agsa+":5000/submit-job"
+num_requests = 3
 
 for i in range(num_requests):
-    try:
-        # Open the files inside the loop to reset the file pointer
-        with open(MAPPER, 'r') as mapper_file, open(REDUCER, 'rb') as reducer_file:
-            files = {
-                'mapper': (MAPPER, mapper_file, 'text/x-python'),
-                'reducer': (REDUCER, reducer_file, 'text/x-python')
-            }
-            response = requests.post(url=url, files=files, data=data)
-            print(f'Request {i + 1}: Status Code = {response.status_code}')
-            # Process the response as needed
-            # e.g., print(response.json())
-    except requests.exceptions.RequestException as e:
-        print(f'Request {i + 1} failed: {e}')
+    t = Thread(target=send_req)
+    t.daemon = True
+    t.start()
 
+time.sleep(20)
+exit
 
 
 # send the post request
@@ -65,4 +73,3 @@ for i in range(num_requests):
 # print('Response text:', response.text)
 
 #response = requests.post("http://localhost:5000/submit-job", files=files, data=data)
-

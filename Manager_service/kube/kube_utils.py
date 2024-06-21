@@ -12,7 +12,7 @@ import os, subprocess, json
 
 # Utils for determening how big the data is
 # set a chuck size of a dataset file to be at 64 MB
-#CHUNK_SIZE = 128 * 1024 * 1024 # 128 MB
+#CHUNK_SIZE = 2 * 1024 * 1024 # 2 MB for big data
 CHUNK_SIZE = 1024 # 2048 bytes for testing
 
 
@@ -56,6 +56,8 @@ def split_datafile(file_path, jid, chunk_size=CHUNK_SIZE):
         chunk_file_path = os.path.join(chunk_dir, f'mapper-{chunk_index}.in')
         with open(chunk_file_path, 'w') as chunk_file:
             chunk_file.writelines(chunk)
+    
+    return chunk_index
 
     return chunk_index
 

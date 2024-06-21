@@ -103,8 +103,8 @@ def send_jobs():
     if not payload:
         return jsonify({"ui_message": "Token verification failed."})
     
-    #managerservice_endpoints = get_service_endpoints(namespace, 'manager')
-    #manager_endpoint = managerservice_endpoints[0]
+    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
+    manager_endpoint = managerservice_endpoints[0]
 
     mapper_file = request.files['mapper']
     reducer_file = request.files['reducer']
