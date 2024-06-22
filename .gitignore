@@ -1,6 +1,7 @@
 Manager_service/db/jobs.sqlite
 Manager_service/kube/data
 Manager_service/kube/examples/*.out
+Manager_service/kube/examples/big_data.txt
 Manager_service/kube/examples/word_count_large.txt
 __pycache__
 test
