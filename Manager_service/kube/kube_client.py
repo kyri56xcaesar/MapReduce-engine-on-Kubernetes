@@ -18,7 +18,6 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducef
     config.load_incluster_config()
     
     jid = str(jid)
-    #if no_mappers < 0 or no_mappers > 10:
     #    return
     # Create the Job object
     job = client.V1Job(
@@ -91,7 +90,6 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
     config.load_incluster_config()
     
     jid = str(jid)
-    
     # Create the Job object
     job = client.V1Job(
         api_version="batch/v1",

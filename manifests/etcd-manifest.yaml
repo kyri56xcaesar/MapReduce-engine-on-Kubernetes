@@ -20,7 +20,7 @@ metadata:
   name: etcd
 spec:
   serviceName: "etcd"
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: etcd
@@ -44,13 +44,15 @@ spec:
         - name: ETCD_LISTEN_PEER_URLS
           value: http://0.0.0.0:2380
         - name: ETCD_INITIAL_CLUSTER
-          value: etcd=http://etcd:2380
+          value: etcd-0=http://etcd-0.etcd:2380,etcd-1=http://etcd-1.etcd:2380,etcd-2=http://etcd-2.etcd:2380
         - name: ETCD_INITIAL_CLUSTER_TOKEN
           value: etcd-cluster
         - name: ETCD_INITIAL_CLUSTER_STATE
           value: new
         - name: ETCD_NAME
-          value: etcd
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         ports:
         - containerPort: 2379
           name: client

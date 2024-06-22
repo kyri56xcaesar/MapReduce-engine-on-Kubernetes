@@ -36,7 +36,7 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "60"
+agsa = "13"
 url = "http://10.244.0."+agsa+":5000/submit-job"
 num_requests = 1
 
