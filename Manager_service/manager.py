@@ -32,11 +32,8 @@ PORT = os.environ['MANAGER_PORT']
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
-
 def create_app():
     
-
     app = Flask(__name__)
     app.config.from_prefixed_env()
     
@@ -51,6 +48,12 @@ app = create_app()
 def main():
     return {"status" : "hello world"}
 
+@app.route("/healthz", methods=["GET"])
+def health():
+    
+    _, status = db.check_db()
+
+    return {'status':status}
 
 @app.route("/submit-job/", methods=["POST"])
 @app.route("/submit-job", methods=["POST"])
@@ -97,8 +100,8 @@ def configure_job():
         #jid = 0
         
         # Schedule an actual job in the K8S
-        job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
-
+        #job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
+        job_status = "no job"
         logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job
@@ -107,11 +110,6 @@ def configure_job():
     except Exception as e:
         logger.error(f'Exception: {e}')
         return jid_json_formatted_message("-1", "error", f"an error occured, details: {str(e)}", 500)
-        
-        
-        
-
-
 
 # Edit a specific jid mapper
 @app.route("/setup/mapper/<jid>", methods=["POST"])
@@ -129,10 +127,7 @@ def setup_job_mapper(jid='-1'):
     
     
     return jid_json_formatted_message(jid, "mngr_message", "mapper not updated", 400)
-
-    
-
-    
+  
 # Edit a specific jid reducer
 @app.route("/setup/reducer/<jid>", methods=["POST"])
 def setup_job_reducer(jid='-1'):
@@ -167,22 +162,18 @@ def setup_job_filename(jid='-1'):
     
     return jid_json_formatted_message(jid, "mngr_message", "filename not updated", 400)
 
-
-# 
-@app.route("/healthz", methods=["GET"])
-def health():
-    
-    (_, status) = (db.check_db())
-
-    return {'status':status}
-
-
 @app.route("/check", methods=["GET"])
 @app.route("/check/", methods=["GET"])
 def check_all():
     jids = db.get_all_jids()
-    return jsonify(jids)
-
+    logger.info(f'existing jids: {jids}')
+    
+    if jids:
+        print('sending jids')
+        return jsonify(jids)
+    else:
+        print('sending empty message')
+        return jsonify({"mngr_message" : "empty"})
 
 @app.route("/check/<jid>", methods=["GET"])
 def check_jid(jid):
@@ -198,7 +189,6 @@ def check_jid(jid):
     reducer_job_status = check_job_status("reducer-job"+jid, 'default')
     
     return jid_json_formatted_message(jid, "mngr_message", f"mapper_job_status: {mapper_job_status}\nreducer_job_status: {reducer_job_status}", 200)
-
 
 @app.route("/get-job-result/<jid>", methods=["GET"])
 def retrieve_results(jid):

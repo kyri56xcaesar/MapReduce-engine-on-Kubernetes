@@ -1,4 +1,4 @@
-from flask import Flask, redirect, request, session, jsonify
+from flask import Flask, redirect, request, session, jsonify, Response
 from base64 import b64decode
 from dotenv import load_dotenv
 import requests
@@ -45,26 +45,10 @@ def get_service_endpoints(namespace, service_name):
 
     return endpoint_addresses
 
-
-if isLocal == "true":
-
-    auth_endpoint = "localhost:" + AUTH_PORT
-    manager_endpoint = "localhost:" + MANAGER_PORT
-else:
-    authservice_endpoints = get_service_endpoints(namespace, 'authservice')
-    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
-    
-    manager_endpoint = managerservice_endpoints[0]
-    auth_endpoint = authservice_endpoints[0] 
-
-
-logger.info(f'IsLocal: {isLocal}')
-logger.info(f'Auth_endpoint: {auth_endpoint}')
-logger.info(f'Manager_endpoint: {manager_endpoint}')
-
 def get_pubkey():
-    auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
-    auth_endpoint=auth_endpoint_list[0]
+    #auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
+    #auth_endpoint=auth_endpoint_list[0]
+    auth_endpoint = f"localhost:{AUTH_PORT}"
     response = requests.get(f"http://{auth_endpoint}/pubkey")
     
     data = json.loads(response.text)
@@ -85,16 +69,49 @@ def verify_user(token):
 
 
 
+
 @app.route("/healthz", methods=["GET"])
 def healthz():
     return {"ui_status":"I am alive."}
 
+
+
+@app.route("/view-jobs", methods=["GET"])
+def view_jobs():
+    #manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    #manager_endpoint=manager_endpoint_list[0] 
+    headers = request.headers
+
+    manager_endpoint = "localhost:5000"  
+    url = f"http://{manager_endpoint}/check" 
+    
+    print(url)
+    
+    response = requests.get(url=url, headers=headers)
+    flask_response = Response(response.content, status=response.status_code, content_type=response.headers['Content-Type'])
+
+    
+    return flask_response
+
+
+@app.route("/view-job/<jid>", methods=["GET"])
+def view_job(jid):
+    
+    #manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    #manager_endpoint=manager_endpoint_list[0]  
+    manager_endpoint = "localhost:5000" 
+    url = f"http://{manager_endpoint}/check/{jid}"
+    print(url)
+    response = requests.get(url)
+    flask_response = Response(response.content, status=response.status_code, content_type=response.headers['Content-Type'])
+
+    # Massage response
+    
+    return flask_response
+
 @app.route("/send-jobs", methods=["POST"])
 def send_jobs():
-    #data = request.get_json()
-    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    manager_endpoint=manager_endpoint_list[0]
-    
+
     headers = request.headers
     token = headers["Cookie"][6:]
     if not token:
@@ -103,9 +120,11 @@ def send_jobs():
     if not payload:
         return jsonify({"ui_message": "Token verification failed."})
     
-    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
-    manager_endpoint = managerservice_endpoints[0]
-    logger.info(f'Manager endpoints: {managerservice_endpoints}')
+    #managerservice_endpoints = get_service_endpoints(namespace, 'manager')
+    #manager_endpoint = managerservice_endpoints[0]
+    manager_endpoint = "localhost:5000"  
+
+    logger.info(f'Manager endpoints: {manager_endpoint}')
 
     mapper_file = request.files['mapper']
     reducer_file = request.files['reducer']
@@ -137,10 +156,31 @@ def send_jobs():
 
     return {'error': 'Invalid input'}, 400
 
+@app.route("/job-result/<jid>", methods=["GET"])
+def get_jid_result(jid):
+    #manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    #manager_endpoint=manager_endpoint_list[0]
+    manager_endpoint = "localhost:5000"  
+
+    logger.info("Get Job result reguest, forwarding to manager...")
+    
+    url = f"http://{manager_endpoint}/get-job-result/{jid}"
+    
+    response = requests.get(url=url)
+    
+    logger.info(f"response from manager: {response}")
+    
+    
+    return response
+
+
 @app.route("/cmd", methods=["POST"])
 def cmd():
+    
     auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
     auth_endpoint=auth_endpoint_list[0]
+    manager_endpoint_list=get_service_endpoints(namespace, 'authservice')
+    manager_endpoint=manager_endpoint_list[0]
     ui_endpoint_list=get_service_endpoints(namespace,'uiservice')
     ui_endpoint=ui_endpoint_list[0]
     data = request.get_json()
