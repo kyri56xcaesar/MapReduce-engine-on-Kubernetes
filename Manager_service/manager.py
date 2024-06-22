@@ -100,8 +100,8 @@ def configure_job():
         #jid = 0
         
         # Schedule an actual job in the K8S
-        #job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
-        job_status = "no job"
+        job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
+        # job_status = "no job"
         logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job

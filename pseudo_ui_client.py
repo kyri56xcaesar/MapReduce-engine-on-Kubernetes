@@ -4,27 +4,27 @@ import time
 
 # response = requests.get(url)
 
-def send_req():
-    try:
-        # Open the files inside the loop to reset the file pointer
-        with open(MAPPER, 'r') as mapper_file, open(REDUCER, 'rb') as reducer_file:
-            files = {
-                'mapper': (MAPPER, mapper_file, 'text/x-python'),
-                'reducer': (REDUCER, reducer_file, 'text/x-python')
-            }
-            response = requests.post(url=url, files=files, data=data)
-            print(f'Request {i + 1}: Status Code = {response.status_code}')
-            # Process the response as needed
-            # e.g., print(response.json())
-    except requests.exceptions.RequestException as e:
-        print(f'Request {i + 1} failed: {e}')
-    t.join
+# def send_req():
+#     try:
+#         # Open the files inside the loop to reset the file pointer
+#         with open(MAPPER, 'r') as mapper_file, open(REDUCER, 'rb') as reducer_file:
+#             files = {
+#                 'mapper': (MAPPER, mapper_file, 'text/x-python'),
+#                 'reducer': (REDUCER, reducer_file, 'text/x-python')
+#             }
+#             response = requests.post(url=url, files=files, data=data)
+#             print(f'Request {i + 1}: Status Code = {response.status_code}')
+#             # Process the response as needed
+#             # e.g., print(response.json())
+#     except requests.exceptions.RequestException as e:
+#         print(f'Request {i + 1} failed: {e}')
+#     t.join
 
 # Paths to files
 MAPPER = 'mapper_input.py'
 REDUCER = 'reducer_input.py'
 
-FILENAME = "word_count_data.txt"
+FILENAME = "big_data.txt"
 
 files = {
     'mapper' : (MAPPER, open(MAPPER), 'r'),
@@ -36,16 +36,32 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "277"
-url = "http://10.244.2."+agsa+":5000/submit-job"
-num_requests = 2
+agsa = "52"
+url = "http://10.244.0."+agsa+":5000/submit-job"
+num_requests = 1
 
-for i in range(num_requests):
-    t = Thread(target=send_req)
-    t.daemon = True
-    t.start()
 
-time.sleep(20)
+try:
+    # Open the files inside the loop to reset the file pointer
+    with open(MAPPER, 'r') as mapper_file, open(REDUCER, 'rb') as reducer_file:
+        files = {
+            'mapper': (MAPPER, mapper_file, 'text/x-python'),
+            'reducer': (REDUCER, reducer_file, 'text/x-python')
+        }
+        response = requests.post(url=url, files=files, data=data)
+        print(f'Request Status Code = {response.status_code}')
+        # Process the response as needed
+        # e.g., print(response.json())
+except requests.exceptions.RequestException as e:
+    print(f'Request failed: {e}')
+
+
+# for i in range(num_requests):
+#     t = Thread(target=send_req)
+#     t.daemon = True
+#     t.start()
+
+# time.sleep(20)
 exit
 
 

@@ -5,3 +5,4 @@ requests
 datetime
 kubernetes
 aioetcd3
+etcd3

@@ -10,10 +10,6 @@ from kubernetes.client import V1EnvVar
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-mapper_image = "mapper:latest"
-reducer_image = "reducer:latest"
-namespace='default'
-
 def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducefunc , no_mappers):
 
     # Load kube config from outside
@@ -40,7 +36,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducef
                 containers=[
                     client.V1Container(
                         name="mapreduce",
-                        image=mapper_image,
+                        image="mapper:latest",
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
@@ -83,7 +79,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducef
     #Create the job in the Kubernetes cluster
     api_response = api_instance.create_namespaced_job(
         body=job,
-        namespace=namespace
+        namespace="default"
     )
     return api_response
 
@@ -112,7 +108,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
                     containers=[
                         client.V1Container(
                             name="mapreduce",
-                            image=reducer_image,
+                            image="reducer:latest",
                             image_pull_policy="IfNotPresent",
                             command=[
                                 "sh", "-c",
@@ -150,7 +146,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
     # Create the job in the Kubernetes cluster
     api_response = api_instance.create_namespaced_job(
         body=job,
-        namespace=namespace
+        namespace="default"
     )
     return api_response
 
@@ -172,12 +168,12 @@ def wait_for_job_done(job_name, namespace):
                 return False
             
 def check_job_status(job_name, namespace):
+
+    # WORKING!!!
     
     api_instance = client.BatchV1Api()
     thread = api_instance.list_namespaced_job(namespace, async_req=True)
     joblist = thread.get()
-    
-    logger.info(joblist)
     
     for job in joblist.items:
         if job.metadata.name == job_name:
@@ -193,7 +189,7 @@ def check_job_status(job_name, namespace):
 def delete_job(api_instance, job_name):
     api_response = api_instance.delete_namespaced_job(
         name=job_name,
-        namespace=namespace,
+        namespace="default",
         body=client.V1DeleteOptions(
             propagation_policy='Foreground',
             grace_period_seconds=5))
@@ -204,6 +200,7 @@ def kube_client_main(jid, filepath, mapper, reducer):
     # Load kube config from outside
     #config.load_kube_config()
     # load kube config from within
+    namespace = 'default'
     config.load_incluster_config()
     batch_v1 = client.BatchV1Api()
 
