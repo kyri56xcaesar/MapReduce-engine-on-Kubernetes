@@ -4,3 +4,4 @@ python-dotenv
 requests
 datetime
 kubernetes
+aioetcd3
