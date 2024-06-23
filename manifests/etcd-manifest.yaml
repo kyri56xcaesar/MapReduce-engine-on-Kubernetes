@@ -61,6 +61,10 @@ spec:
         volumeMounts:
         - name: etcd-data
           mountPath: /var/lib/etcd
+        resources:
+          requests:
+            cpu: "0.1"  # Request 0.1 CPU cores
+            memory: "100Mi"  # Request 100 MiB memory
   volumeClaimTemplates:
   - metadata:
       name: etcd-data

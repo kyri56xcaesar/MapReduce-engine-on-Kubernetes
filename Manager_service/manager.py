@@ -9,6 +9,7 @@ from kube.kube_client import *
 from kube.kube_utils import *
 from service_utils import *
 import db.database as db
+import etcd_api
 # This service should provide an REST api in order to setup an execution of a JOB
 #
 # And handle the execution of the job
@@ -57,8 +58,8 @@ def health():
 
 @app.route("/submit-job/", methods=["POST"])
 @app.route("/submit-job", methods=["POST"])
-def configure_job():
-    
+def submit_job():
+     
     ## guard statements, check if everything is here
     # check all inputs 
     # validate inputs
@@ -81,7 +82,7 @@ def configure_job():
         logger.info(f'reduce_file received: {reduce_file}')
         
         # Save data in a db
-        job: Job = Job()
+        # job: Job = Job()
         
         # Setup Job conf
         mapper_content = map_file.read().decode("utf-8")
@@ -91,16 +92,27 @@ def configure_job():
         logger.info(f'reducer_content received:\n {reducer_content}')
         logger.info(f'filename: {filename}')
         
-        job.setup_conf(mapper_content, reducer_content, filename)
+        # job.setup_conf(mapper_content, reducer_content, filename)
 
-        _, jid = db.insert_job(job.JobConfiguration)
-        
-        job.jid = jid
+        # _, jid = db.insert_job(job.JobConfiguration)
+        phase = "mapping"
+        # job.jid = jid
+        # lock = etcd_api.etcd3.Lock("manager-0")
+        # lock.acquire()
+        manager_jobs = etcd_api.get("manager-0")
+        if manager_jobs is not None:
+            job_count = int(manager_jobs)
+            jid = job_count + 1
+        else:
+            jid=1
+        etcd_api.put(str(jid),f"{filename},{mapper_content},{reducer_content},{phase}")    
+        etcd_api.put("manager-0",str(jid))       
+        # lock.release()
         logger.info(f'current JID: {jid}')
         #jid = 0
         
         # Schedule an actual job in the K8S
-        job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
+        job_status = schedule_job(jid, filename, mapper_content, reducer_content,phase)
         # job_status = "no job"
         logger.info(f'jid: {jid}, status: {job_status}')
         
@@ -211,3 +223,4 @@ def retrieve_results(jid):
 if __name__ == "__main__":
     
     app.run(host='0.0.0.0', port=PORT, debug=False)
+    rescedule_unfinished_jobs()

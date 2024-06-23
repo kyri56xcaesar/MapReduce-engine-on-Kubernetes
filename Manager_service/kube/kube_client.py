@@ -6,6 +6,7 @@ from time import sleep
 from kubernetes import client, config
 from kubernetes import client, config, watch
 from kubernetes.client import V1EnvVar
+import etcd_api
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -193,96 +194,100 @@ def delete_job(api_instance, job_name):
             grace_period_seconds=5))
     logger.info(f"Job deleted. status='{str(api_response.status)}'")             
                 
-def kube_client_main(jid, filepath, mapper, reducer):
-    
-    # Load kube config from outside
-    #config.load_kube_config()
-    # load kube config from within
-    namespace = 'default'
-    config.load_incluster_config()
-    batch_v1 = client.BatchV1Api()
+def schedule_job(jid, filepath, mapper, reducer,state):
+
+    if state == "mapping":
+        # Load kube config from outside
+        #config.load_kube_config()
+        # load kube config from within
+        namespace = 'default'
+        config.load_incluster_config()
+        batch_v1 = client.BatchV1Api()
 
 
-    jid = str(jid)
-    #filepath = os.path.join(os.getcwd(), 'examples/', filepath)
-    
-    filepath = "kube/examples/" + filepath
-    logger.info(f'FILEPATH: {filepath}')
+        jid = str(jid)
+        #filepath = os.path.join(os.getcwd(), 'examples/', filepath)
+        
+        filepath = "kube/examples/" + filepath
+        logger.info(f'FILEPATH: {filepath}')
 
+        
+        # this should split the files in the /mnt path
+        # create directories in the PV for the given JID
+        fsize = get_file_size(filepath)
+        no_workers = split_datafile(filepath, jid) + 1
 
-    # this should split the files in the /mnt path
-    # create directories in the PV for the given JID
-    fsize = get_file_size(filepath)
-    no_workers = split_datafile(filepath, jid) + 1
+        logger.info(f'Chunks created')
 
-    logger.info(f'Chunks created')
+        logger.info(f'File size: {fsize}')
+        logger.info(f'# workers: {no_workers}')
 
-    logger.info(f'File size: {fsize}')
-    logger.info(f'# workers: {no_workers}')
+        # apply THE MAPPERS job
+        create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
+        logger.info(f'Mapper job{jid} applied')
+
+        state = "shuffling"
+        etcd_api.put(str(jid),f"{filepath},{mapper},{reducer},{state}")
   
+    if state == "shuffling":       
+        logger.info('Waiting for mapper job'+jid+' to complete.')
+        mapper_status = wait_for_job_done(job_name="mapper-job"+jid, namespace=namespace)
+        logger.info(f"Status {mapper_status}")
+        # apply SHUFFLE 
+        if mapper_status:
+            logger.info('About to shuffle.')
 
-    # apply THE MAPPERS job
-    create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
-    logger.info(f'Mapper job{jid} applied')
-    
+            input_path = "/mnt/data/"+jid+"/shuffler/in/"
+            output_path = "/mnt/data/"+jid+"/reducer/in/"
+
+            logger.info(f'Input_path: {input_path}')
+            logger.info(f'Output_path: {output_path}')
+
+            files = os.listdir(input_path)
+            logger.info(f'files from listdir: {files}')
             
-    logger.info('Waiting for mapper job'+jid+' to complete.')
-    mapper_status = wait_for_job_done(job_name="mapper-job"+jid, namespace=namespace)
-    logger.info(f"Status {mapper_status}")
- 
-    # apply SHUFFLE 
-    if mapper_status:
-        logger.info('About to shuffle.')
+            shuffled_data = {}
 
-        input_path = "/mnt/data/"+jid+"/shuffler/in/"
-        output_path = "/mnt/data/"+jid+"/reducer/in/"
-
-        logger.info(f'Input_path: {input_path}')
-        logger.info(f'Output_path: {output_path}')
-
-        files = os.listdir(input_path)
-        logger.info(f'files from listdir: {files}')
-        
-        shuffled_data = {}
-
-        for file_path in files:
-            file_name = os.path.basename(file_path)
-            logger.info(f"Processing file: {file_name}")
-            
-            with open(input_path + file_path) as f:
-                data = json.load(f)
-                for key, value in data.items():
-                    if key not in shuffled_data:
-                        shuffled_data[key] = value
-                    else:
-                        shuffled_data[key].extend(value)
+            for file_path in files:
+                file_name = os.path.basename(file_path)
+                logger.info(f"Processing file: {file_name}")
                 
-        # prepare and estimate reducers
-        keys = list(shuffled_data.keys())
-        
-        keys_per_reducer = ceil(len(keys) / no_workers)
-        
-        no_reducers = ceil(len(keys) / keys_per_reducer)
-               
-        #logger.info(f'Keys: {keys}')
-        logger.info(f'No_reducers: {no_reducers}')
-        logger.info(f'Keys_per_reducer: {keys_per_reducer}')
-        
-        for i in range(no_reducers):
-            reducer_data = {}
-            start_index = i * keys_per_reducer
-            end_index = min((i + 1) * keys_per_reducer, len(keys))
+                with open(input_path + file_path) as f:
+                    data = json.load(f)
+                    for key, value in data.items():
+                        if key not in shuffled_data:
+                            shuffled_data[key] = value
+                        else:
+                            shuffled_data[key].extend(value)
+                    
+            # prepare and estimate reducers
+            keys = list(shuffled_data.keys())
             
-            for key in keys[start_index:end_index]:
-                reducer_data[key] = shuffled_data[key]
+            keys_per_reducer = ceil(len(keys) / no_workers)
+            
+            no_reducers = ceil(len(keys) / keys_per_reducer)
                 
-            reducer_file_path = os.path.join(output_path, f"reducer-{i}.in")
-            with open(reducer_file_path, 'w') as out:
-                json.dump(reducer_data, out, indent=1, ensure_ascii=False)
+            #logger.info(f'Keys: {keys}')
+            logger.info(f'No_reducers: {no_reducers}')
+            logger.info(f'Keys_per_reducer: {keys_per_reducer}')
             
-        #logger.info(f'reducer_data: {reducer_data}')
-        
+            for i in range(no_reducers):
+                reducer_data = {}
+                start_index = i * keys_per_reducer
+                end_index = min((i + 1) * keys_per_reducer, len(keys))
+                
+                for key in keys[start_index:end_index]:
+                    reducer_data[key] = shuffled_data[key]
+                    
+                reducer_file_path = os.path.join(output_path, f"reducer-{i}.in")
+                with open(reducer_file_path, 'w') as out:
+                    json.dump(reducer_data, out, indent=1, ensure_ascii=False)
+                
+            logger.info(f'reducer_data: {reducer_data}')
+            state = "reducing"
+            etcd_api.put(str(jid),f"{filepath},{mapper},{reducer},{state}")
             
+    if state == "reducing":            
         # apply the REDUCERS job
         logger.info(f'applying reducer job{jid}')
         create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
@@ -290,15 +295,25 @@ def kube_client_main(jid, filepath, mapper, reducer):
         logger.info(f'waiting for reducer-job{jid}')
         reducer_status = wait_for_job_done(job_name="reducer-job"+jid, namespace=namespace)
         logger.info(f'reducer_status: {reducer_status}')
-    
-    # save output only and cleanup.
-    # cleanup pv with given jid
-    logger.info(f'cleaning up')
-    cleanUp_pv(jid)
-    
-    # delete jobs
-    delete_job(batch_v1, "mapper-job"+jid)
-    delete_job(batch_v1, "reducer-job"+jid)
-     
-    return {"jid": jid, "mapper-status": mapper_status, "reducer-status":reducer_status}
+        
+        # save output only and cleanup.
+        # cleanup pv with given jid
+        logger.info(f'cleaning up')
+        cleanUp_pv(jid)
+        
+        # delete jobs
+        delete_job(batch_v1, "mapper-job"+jid)
+        delete_job(batch_v1, "reducer-job"+jid)
+        
+        return {"jid": jid, "mapper-status": mapper_status, "reducer-status":reducer_status}
   
+def rescedule_unfinished_jobs():
+    
+    logger.info("Rescheduling unfinished jobs")
+    manager_jobs = etcd_api.get("manager-0")
+    if manager_jobs is not None:
+        job_count = int(manager_jobs)
+        for jobID in range(job_count):
+            job_info_string = str(etcd_api.get(str(jobID)))
+            job_info = job_info_string.split()
+            schedule_job(str(jobID), f'{job_info[0]},{job_info[1]},{job_info[2]},{job_info[3]}')
