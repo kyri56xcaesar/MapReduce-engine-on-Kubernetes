@@ -4,11 +4,9 @@ from dotenv import load_dotenv
 from flask import *
 from kubernetes import client, config
 
-from Jobs import *
 from kube.kube_client import *
 from kube.kube_utils import *
 from service_utils import *
-import db.database as db
 import etcd_api
 # This service should provide an REST api in order to setup an execution of a JOB
 #
@@ -38,7 +36,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_prefixed_env()
     
-    db.init_app(app, db_path=os.environ['FLASK_DATABASE'])
     # subprocess.run(["python3", "kube_client.py"]) # reschedule any unfinished jobs
     rescedule_unfinished_jobs()
 
@@ -54,11 +51,8 @@ def main():
 @app.route("/healthz", methods=["GET"])
 def health():
     
-    _, status = db.check_db()
+    return {'mngr_status':'I am alive'}
 
-    return {'status':status}
-
-@app.route("/submit-job/", methods=["POST"])
 @app.route("/submit-job", methods=["POST"])
 def submit_job():
      
@@ -138,13 +132,9 @@ def setup_job_mapper(jid='-1'):
 
     mapper_file = request.files['mapper'].read().decode("utf-8")
     
-    success = db.update_job_mapper_by_jid(jid, mapper_file)    
+    pass
     
-    if success:
-        return jid_json_formatted_message(jid, "mngr_message", "mapper updated successfully", 200)
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "mapper not updated", 400)
+    return jid_json_formatted_message(jid, "mngr_message", "mapper not updated. Method under construction...", 400)
   
 # Edit a specific jid reducer
 @app.route("/setup/reducer/<jid>", methods=["POST"])
@@ -155,13 +145,8 @@ def setup_job_reducer(jid='-1'):
     
     reducer_file = request.files['reducer'].read().decode("utf-8")
     
-    success = db.update_job_reducer_by_jid(jid, reducer_file)    
     
-    if success:
-        return jid_json_formatted_message(jid, "mngr_message", "reducer updated successfully", 200)
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "reducer not updated", 400)
+    return jid_json_formatted_message(jid, "mngr_message", "reducer not updated. Method under construction.", 400)
 
 # Edit a specific jid filename
 @app.route("/setup/filename/<jid>", methods=["POST"])
@@ -172,18 +157,14 @@ def setup_job_filename(jid='-1'):
     if not filename:
         return jid_json_formatted_message(jid, "mngr_message", "must provide filename", 400)
     
-    success = db.update_job_filename_by_jid(jid, filename)    
     
-    if success:
-        return jid_json_formatted_message(jid, "mngr_message", "filename updated successfully", 200)
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "filename not updated", 400)
+    return jid_json_formatted_message(jid, "mngr_message", "filename not updated. Method under construction", 400)
 
 @app.route("/check", methods=["GET"])
-@app.route("/check/", methods=["GET"])
 def check_all():
-    jids = db.get_all_jids()
+    
+    # need to get all jids from etcd.
+    jids = []
     logger.info(f'existing jids: {jids}')
     
     if jids:
@@ -198,10 +179,6 @@ def check_jid(jid):
     
     logger.info(f'JOB id: {jid}')
     
-    job: Job = db.get_job_by_id(jid)
-    
-    # if not job:
-    #     return jsonify({"status":"does't exist"})
     
     mapper_job_status = check_job_status("mapper-job"+jid, 'default')
     reducer_job_status = check_job_status("reducer-job"+jid, 'default')

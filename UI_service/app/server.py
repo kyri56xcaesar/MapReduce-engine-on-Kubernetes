@@ -46,9 +46,9 @@ def get_service_endpoints(namespace, service_name):
     return endpoint_addresses
 
 def get_pubkey():
-    #auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
-    #auth_endpoint=auth_endpoint_list[0]
-    auth_endpoint = f"localhost:{AUTH_PORT}"
+    auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
+    auth_endpoint=auth_endpoint_list[0]
+    #auth_endpoint = f"localhost:{AUTH_PORT}"
     response = requests.get(f"http://{auth_endpoint}/pubkey")
     
     data = json.loads(response.text)
@@ -78,14 +78,14 @@ def healthz():
 
 @app.route("/view-jobs", methods=["GET"])
 def view_jobs():
-    #manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    #manager_endpoint=manager_endpoint_list[0] 
-    headers = request.headers
+    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    manager_endpoint=manager_endpoint_list[0] 
+    #manager_endpoint = "localhost:5000"  
 
-    manager_endpoint = "localhost:5000"  
+    headers = request.headers
     url = f"http://{manager_endpoint}/check" 
     
-    print(url)
+    logger.info(url)
     
     response = requests.get(url=url, headers=headers)
     flask_response = Response(response.content, status=response.status_code, content_type=response.headers['Content-Type'])
@@ -97,11 +97,12 @@ def view_jobs():
 @app.route("/view-job/<jid>", methods=["GET"])
 def view_job(jid):
     
-    #manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    #manager_endpoint=manager_endpoint_list[0]  
-    manager_endpoint = "localhost:5000" 
+    manager_endpoint=manager_endpoint_list[0]  
+    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    #manager_endpoint = "localhost:5000" 
+    
     url = f"http://{manager_endpoint}/check/{jid}"
-    print(url)
+    logger.info(url)
     response = requests.get(url)
     flask_response = Response(response.content, status=response.status_code, content_type=response.headers['Content-Type'])
 
@@ -120,9 +121,9 @@ def send_jobs():
     if not payload:
         return jsonify({"ui_message": "Token verification failed."})
     
-    #managerservice_endpoints = get_service_endpoints(namespace, 'manager')
-    #manager_endpoint = managerservice_endpoints[0]
-    manager_endpoint = "localhost:5000"  
+    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
+    manager_endpoint = managerservice_endpoints[0]
+    #manager_endpoint = "localhost:5000"  
 
     logger.info(f'Manager endpoints: {manager_endpoint}')
 
@@ -158,9 +159,9 @@ def send_jobs():
 
 @app.route("/job-result/<jid>", methods=["GET"])
 def get_jid_result(jid):
-    #manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    #manager_endpoint=manager_endpoint_list[0]
-    manager_endpoint = "localhost:5000"  
+    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    manager_endpoint=manager_endpoint_list[0]
+    #manager_endpoint = "localhost:5000"  
 
     logger.info("Get Job result reguest, forwarding to manager...")
     

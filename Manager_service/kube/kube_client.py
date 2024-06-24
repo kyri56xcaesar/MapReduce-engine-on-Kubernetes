@@ -18,6 +18,8 @@ import etcd_api
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+namespace = 'default'
+
 def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducefunc , no_mappers):
 
     # Load kube config from outside
@@ -86,7 +88,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducef
     #Create the job in the Kubernetes cluster
     api_response = api_instance.create_namespaced_job(
         body=job,
-        namespace="default"
+        namespace=namespace
     )
     return api_response
 
@@ -152,7 +154,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
     # Create the job in the Kubernetes cluster
     api_response = api_instance.create_namespaced_job(
         body=job,
-        namespace="default"
+        namespace=namespace
     )
     return api_response
 
@@ -202,12 +204,11 @@ def check_job_exists(job_name, namespace):
             return True
     
     return False
-
-           
+          
 def delete_job(api_instance, job_name):
     api_response = api_instance.delete_namespaced_job(
         name=job_name,
-        namespace="default",
+        namespace=namespace,
         body=client.V1DeleteOptions(
             propagation_policy='Foreground',
             grace_period_seconds=5))
@@ -215,7 +216,7 @@ def delete_job(api_instance, job_name):
                 
 def schedule_job(jid, filepath, mapper, reducer,state):
 
-    namespace="default"
+    namespace=namespace
     logger.info("ENTERED")
     
     # Load kube config from outside
