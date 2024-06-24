@@ -9,6 +9,7 @@ from kube.kube_client import *
 from kube.kube_utils import *
 from service_utils import *
 import db.database as db
+import etcd_api
 # This service should provide an REST api in order to setup an execution of a JOB
 #
 # And handle the execution of the job
@@ -38,6 +39,8 @@ def create_app():
     app.config.from_prefixed_env()
     
     db.init_app(app, db_path=os.environ['FLASK_DATABASE'])
+    # subprocess.run(["python3", "kube_client.py"]) # reschedule any unfinished jobs
+    rescedule_unfinished_jobs()
 
     return app
 
@@ -57,8 +60,8 @@ def health():
 
 @app.route("/submit-job/", methods=["POST"])
 @app.route("/submit-job", methods=["POST"])
-def configure_job():
-    
+def submit_job():
+     
     ## guard statements, check if everything is here
     # check all inputs 
     # validate inputs
@@ -81,7 +84,7 @@ def configure_job():
         logger.info(f'reduce_file received: {reduce_file}')
         
         # Save data in a db
-        job: Job = Job()
+        # job: Job = Job()
         
         # Setup Job conf
         mapper_content = map_file.read().decode("utf-8")
@@ -91,17 +94,32 @@ def configure_job():
         logger.info(f'reducer_content received:\n {reducer_content}')
         logger.info(f'filename: {filename}')
         
-        job.setup_conf(mapper_content, reducer_content, filename)
+        # job.setup_conf(mapper_content, reducer_content, filename)
 
-        _, jid = db.insert_job(job.JobConfiguration)
-        
-        job.jid = jid
+        # _, jid = db.insert_job(job.JobConfiguration)
+        phase = "mapping"
+        # job.jid = jid
+        # lock = etcd_api.etcd3.Lock("manager-0")
+        # lock.acquire()
+        manager_jobs = etcd_api.get_with_lock("manager-0")
+        if manager_jobs is not None:
+            job_count = int(manager_jobs)
+            jid = job_count + 1
+        else:
+            jid=1
+        # etcd_api.put(str(jid),f"{filename},{mapper_content},{reducer_content},{phase}")
+        etcd_api.put(f'{jid}-0',str(filename))
+        etcd_api.put(f'{jid}-1',str(mapper_content))
+        etcd_api.put(f'{jid}-2',str(reducer_content))
+        etcd_api.put(f'{jid}-3',str(phase))
+        etcd_api.put_with_lock("manager-0",str(jid))       
+        # lock.release()
         logger.info(f'current JID: {jid}')
         #jid = 0
         
         # Schedule an actual job in the K8S
-        #job_status = kube_client_main(jid, filename, mapper_content, reducer_content)
-        job_status = "no job"
+        job_status = schedule_job(str(jid), filename, mapper_content, reducer_content,phase)
+        # job_status = "no job"
         logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job
