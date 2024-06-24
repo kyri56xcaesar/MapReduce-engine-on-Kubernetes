@@ -76,6 +76,7 @@ def healthz():
 
 
 
+# Under construction....
 @app.route("/view-jobs", methods=["GET"])
 def view_jobs():
     manager_endpoint_list=get_service_endpoints(namespace, 'manager')
