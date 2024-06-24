@@ -39,6 +39,8 @@ def create_app():
     app.config.from_prefixed_env()
     
     db.init_app(app, db_path=os.environ['FLASK_DATABASE'])
+    # subprocess.run(["python3", "kube_client.py"]) # reschedule any unfinished jobs
+    rescedule_unfinished_jobs()
 
     return app
 
@@ -105,14 +107,18 @@ def submit_job():
             jid = job_count + 1
         else:
             jid=1
-        etcd_api.put(str(jid),f"{filename},{mapper_content},{reducer_content},{phase}")    
+        # etcd_api.put(str(jid),f"{filename},{mapper_content},{reducer_content},{phase}")
+        etcd_api.put(f'{jid}-0',str(filename))
+        etcd_api.put(f'{jid}-1',str(mapper_content))
+        etcd_api.put(f'{jid}-2',str(reducer_content))
+        etcd_api.put(f'{jid}-3',str(phase))
         etcd_api.put("manager-0",str(jid))       
         # lock.release()
         logger.info(f'current JID: {jid}')
         #jid = 0
         
         # Schedule an actual job in the K8S
-        job_status = schedule_job(jid, filename, mapper_content, reducer_content,phase)
+        job_status = schedule_job(str(jid), filename, mapper_content, reducer_content,phase)
         # job_status = "no job"
         logger.info(f'jid: {jid}, status: {job_status}')
         
@@ -223,4 +229,3 @@ def retrieve_results(jid):
 if __name__ == "__main__":
     
     app.run(host='0.0.0.0', port=PORT, debug=False)
-    rescedule_unfinished_jobs()

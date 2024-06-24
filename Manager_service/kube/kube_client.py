@@ -6,7 +6,14 @@ from time import sleep
 from kubernetes import client, config
 from kubernetes import client, config, watch
 from kubernetes.client import V1EnvVar
+import sys
+import os
+
+# Add the parent directory to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import etcd_api
+# import kube_utils
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -183,7 +190,19 @@ def check_job_status(job_name, namespace):
     
     logger.info(f"Job {job_name} not found in namespace {namespace}.")
     return None
-           
+
+def check_job_exists(job_name, namespace):
+    
+    api_instance = client.BatchV1Api()
+    thread = api_instance.list_namespaced_job(namespace, async_req=True)
+    joblist = thread.get()
+    
+    for job in joblist.items:
+        if job.metadata.name == job_name:
+            return True
+    
+    return False
+
            
 def delete_job(api_instance, job_name):
     api_response = api_instance.delete_namespaced_job(
@@ -196,39 +215,43 @@ def delete_job(api_instance, job_name):
                 
 def schedule_job(jid, filepath, mapper, reducer,state):
 
+    namespace="default"
+    logger.info("ENTERED")
+    
+    # Load kube config from outside
+    #config.load_kube_config()
+    # load kube config from within        
+    config.load_incluster_config()
+    batch_v1 = client.BatchV1Api()
+   
+    #filepath = os.path.join(os.getcwd(), 'examples/', filepath)
+    
+    filepath = "kube/examples/" + filepath
+    logger.info(f'FILEPATH: {filepath}')
+
+    
+    # this should split the files in the /mnt path
+    # create directories in the PV for the given JID
+    fsize = get_file_size(filepath)
+    no_workers = split_datafile(filepath, jid) + 1
+
+    logger.info(f'Chunks created')
+
+    logger.info(f'File size: {fsize}')
+    logger.info(f'# workers: {no_workers}')
+
     if state == "mapping":
-        # Load kube config from outside
-        #config.load_kube_config()
-        # load kube config from within
-        namespace = 'default'
-        config.load_incluster_config()
-        batch_v1 = client.BatchV1Api()
-
-
-        jid = str(jid)
-        #filepath = os.path.join(os.getcwd(), 'examples/', filepath)
-        
-        filepath = "kube/examples/" + filepath
-        logger.info(f'FILEPATH: {filepath}')
-
-        
-        # this should split the files in the /mnt path
-        # create directories in the PV for the given JID
-        fsize = get_file_size(filepath)
-        no_workers = split_datafile(filepath, jid) + 1
-
-        logger.info(f'Chunks created')
-
-        logger.info(f'File size: {fsize}')
-        logger.info(f'# workers: {no_workers}')
-
         # apply THE MAPPERS job
-        create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
-        logger.info(f'Mapper job{jid} applied')
-
+        if(check_job_exists(job_name="mapper-job"+jid, namespace=namespace) == False):
+            create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
+            logger.info(f'Mapper job{jid} applied')
         state = "shuffling"
-        etcd_api.put(str(jid),f"{filepath},{mapper},{reducer},{state}")
+        etcd_api.put(f'{jid}-3',str(state))
   
+    logger.info("ENTERED2")
+    logger.info(state)
+    logger.info("ENTERED3")
+
     if state == "shuffling":       
         logger.info('Waiting for mapper job'+jid+' to complete.')
         mapper_status = wait_for_job_done(job_name="mapper-job"+jid, namespace=namespace)
@@ -283,14 +306,18 @@ def schedule_job(jid, filepath, mapper, reducer,state):
                 with open(reducer_file_path, 'w') as out:
                     json.dump(reducer_data, out, indent=1, ensure_ascii=False)
                 
-            logger.info(f'reducer_data: {reducer_data}')
+            # logger.info(f'reducer_data: {reducer_data}')
             state = "reducing"
-            etcd_api.put(str(jid),f"{filepath},{mapper},{reducer},{state}")
-            
-    if state == "reducing":            
+            etcd_api.put(f'{jid}-4',str(no_reducers))
+            etcd_api.put(f'{jid}-3',str(state))
+
+    no_reducers = int(etcd_api.get(f'{jid}-4'))
+    logger.info("ENTERED4")
+    if state == "reducing":           
         # apply the REDUCERS job
-        logger.info(f'applying reducer job{jid}')
-        create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
+        if(check_job_exists(job_name="reducer-job"+jid, namespace=namespace) == False):
+            logger.info(f'applying reducer job{jid}')
+            create_and_apply_reducer_Job_manifest(batch_v1, jid, reducer, no_reducers)    
         
         logger.info(f'waiting for reducer-job{jid}')
         reducer_status = wait_for_job_done(job_name="reducer-job"+jid, namespace=namespace)
@@ -304,16 +331,23 @@ def schedule_job(jid, filepath, mapper, reducer,state):
         # delete jobs
         delete_job(batch_v1, "mapper-job"+jid)
         delete_job(batch_v1, "reducer-job"+jid)
-        
+
+        state = "completed"
+        etcd_api.put(f'{jid}-3',str(state))
+
         return {"jid": jid, "mapper-status": mapper_status, "reducer-status":reducer_status}
   
 def rescedule_unfinished_jobs():
-    
+
     logger.info("Rescheduling unfinished jobs")
     manager_jobs = etcd_api.get("manager-0")
     if manager_jobs is not None:
         job_count = int(manager_jobs)
-        for jobID in range(job_count):
-            job_info_string = str(etcd_api.get(str(jobID)))
-            job_info = job_info_string.split()
-            schedule_job(str(jobID), f'{job_info[0]},{job_info[1]},{job_info[2]},{job_info[3]}')
+        for jobID in range(1,job_count+1):
+            job_info = etcd_api.get_prefix(str(jobID))
+            state = job_info[3]    
+            schedule_job(str(jobID),str(job_info[0]),str(job_info[1]),str(job_info[2]),str(state))
+    logger.info("Rescheduling finished")
+
+if __name__ == "__main__":
+    rescedule_unfinished_jobs()

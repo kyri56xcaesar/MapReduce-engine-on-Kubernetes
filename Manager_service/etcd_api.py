@@ -28,8 +28,6 @@ def put(key, value):
         lock.acquire()
         etcd.put(key, value)
         lock.release()
-        for member in etcd.members:
-            logger.info(member.name)
     else:
         logger.info("Could not retrieve etcd endpoints")
 
@@ -40,12 +38,25 @@ def get(key):
     if etcd_endpoints:
         etcd = etcd3.client(host=etcd_endpoints[0],port = 2379)
         value, _ = etcd.get(key)
-        logger.info(value)
         return value.decode('utf-8') if value else None
     else:
         logger.info("Could not retrieve etcd endpoints")
         return None
 
-if __name__ == "__main__":
-    put('this', 'hello etcd2')
-    get('greeting')
+def get_prefix(key):
+    etcd_endpoints = get_etcd_endpoints()
+    logger.info(etcd_endpoints)
+
+    if etcd_endpoints:
+
+        etcd = etcd3.client(host=etcd_endpoints[0],port = 2379)
+
+        values = []
+
+        for value , metadata in etcd.get_prefix(key):
+            values.append(value.decode('utf-8'))  # Decode bytes to string
+
+        return values if values else None
+    else:
+        logger.info("Could not retrieve etcd endpoints")
+        return None
