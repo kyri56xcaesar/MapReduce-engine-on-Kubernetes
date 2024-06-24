@@ -24,7 +24,7 @@ def send_req():
 MAPPER = 'mapper_input.py'
 REDUCER = 'reducer_input.py'
 
-FILENAME = "word_count_small.txt"
+FILENAME = "big_data.txt"
 
 files = {
     'mapper' : (MAPPER, open(MAPPER), 'r'),
@@ -36,8 +36,8 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "76"
-url = "http://10.244.1."+agsa+":5000/submit-job"
+agsa = "89"
+url = "http://10.244.2."+agsa+":5000/submit-job"
 num_requests = 3
 
 
@@ -61,7 +61,7 @@ for i in range(num_requests):
     t.daemon = True
     t.start()
 
-time.sleep(20)
+time.sleep(5)
 exit
 
 

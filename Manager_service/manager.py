@@ -101,7 +101,7 @@ def submit_job():
         # job.jid = jid
         # lock = etcd_api.etcd3.Lock("manager-0")
         # lock.acquire()
-        manager_jobs = etcd_api.get("manager-0")
+        manager_jobs = etcd_api.get_with_lock("manager-0")
         if manager_jobs is not None:
             job_count = int(manager_jobs)
             jid = job_count + 1
@@ -112,7 +112,7 @@ def submit_job():
         etcd_api.put(f'{jid}-1',str(mapper_content))
         etcd_api.put(f'{jid}-2',str(reducer_content))
         etcd_api.put(f'{jid}-3',str(phase))
-        etcd_api.put("manager-0",str(jid))       
+        etcd_api.put_with_lock("manager-0",str(jid))       
         # lock.release()
         logger.info(f'current JID: {jid}')
         #jid = 0

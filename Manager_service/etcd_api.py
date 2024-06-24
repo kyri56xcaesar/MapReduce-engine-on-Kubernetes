@@ -1,6 +1,7 @@
 from venv import logger
 import etcd3
 from kubernetes import config, client
+from tenacity import retry, wait_fixed
 
 namespace = 'default'
 
@@ -17,23 +18,45 @@ def get_etcd_endpoints():
         logger.info(f"Error retrieving endpoints: {e}")
         return []
 
-def put(key, value):
+@retry(wait=wait_fixed(2))
+def put_with_lock(key, value):
     etcd_endpoints = get_etcd_endpoints()
-    logger.info(etcd_endpoints)
-    
     
     if etcd_endpoints:
         etcd = etcd3.client(host=etcd_endpoints[0],port = 2379)
-        lock = etcd.lock(key)
+        lock = etcd.lock(key,ttl=60)
         lock.acquire()
         etcd.put(key, value)
         lock.release()
     else:
         logger.info("Could not retrieve etcd endpoints")
 
+def put(key, value):
+    etcd_endpoints = get_etcd_endpoints()
+
+    if etcd_endpoints:
+        etcd = etcd3.client(host=etcd_endpoints[0],port = 2379)
+        etcd.put(key, value)
+    else:
+        logger.info("Could not retrieve etcd endpoints")        
+
+@retry(wait=wait_fixed(2))
+def get_with_lock(key):
+    etcd_endpoints = get_etcd_endpoints()
+
+    if etcd_endpoints:
+        etcd = etcd3.client(host=etcd_endpoints[0],port = 2379)
+        lock = etcd.lock(key,ttl=60)
+        lock.acquire()
+        value, _ = etcd.get(key)
+        lock.release()
+        return value.decode('utf-8') if value else None
+    else:
+        logger.info("Could not retrieve etcd endpoints")
+        return None
+
 def get(key):
     etcd_endpoints = get_etcd_endpoints()
-    logger.info(etcd_endpoints)
 
     if etcd_endpoints:
         etcd = etcd3.client(host=etcd_endpoints[0],port = 2379)
@@ -45,7 +68,6 @@ def get(key):
 
 def get_prefix(key):
     etcd_endpoints = get_etcd_endpoints()
-    logger.info(etcd_endpoints)
 
     if etcd_endpoints:
 

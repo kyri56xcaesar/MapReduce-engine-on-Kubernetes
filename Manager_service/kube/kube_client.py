@@ -340,7 +340,7 @@ def schedule_job(jid, filepath, mapper, reducer,state):
 def rescedule_unfinished_jobs():
 
     logger.info("Rescheduling unfinished jobs")
-    manager_jobs = etcd_api.get("manager-0")
+    manager_jobs = etcd_api.get_with_lock("manager-0")
     if manager_jobs is not None:
         job_count = int(manager_jobs)
         for jobID in range(1,job_count+1):
