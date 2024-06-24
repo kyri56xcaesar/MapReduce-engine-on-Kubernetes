@@ -81,7 +81,7 @@ metadata:
   name: manager
 spec:
   serviceName: "managers"
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: managers
