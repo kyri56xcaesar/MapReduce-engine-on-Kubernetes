@@ -36,7 +36,7 @@ data = {
     'filename' : FILENAME
 }
 
-agsa = "89"
+agsa = "251"
 url = "http://10.244.2."+agsa+":5000/submit-job"
 num_requests = 3
 
@@ -57,6 +57,7 @@ num_requests = 3
 
 
 for i in range(num_requests):
+    time.sleep(2)
     t = Thread(target=send_req)
     t.daemon = True
     t.start()
