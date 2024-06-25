@@ -229,28 +229,26 @@ def schedule_job(jid, filepath, mapper, reducer,state):
     logger.info(f'FILEPATH: {filepath}')
 
     
-    # this should split the files in the /mnt path
-    # create directories in the PV for the given JID
-    fsize = get_file_size(filepath)
-    no_workers = split_datafile(filepath, jid) + 1
-
-    logger.info(f'Chunks created')
-
-    logger.info(f'File size: {fsize}')
-    logger.info(f'# workers: {no_workers}')
 
     if state == "mapping":
         # apply THE MAPPERS job
         if(check_job_exists(job_name="mapper-job"+jid, namespace=namespace) == False):
+            # this should split the files in the /mnt path
+            # create directories in the PV for the given JID
+            fsize = get_file_size(filepath)
+            no_workers = split_datafile(filepath, jid) + 1
+            logger.info(f'Chunks created')
+            logger.info(f'File size: {fsize}')
+            logger.info(f'# workers: {no_workers}')
             create_and_apply_mapper_Job_manifest(batch_v1, jid, mapper, reducer, no_workers)
             logger.info(f'Mapper job{jid} applied')
         state = "shuffling"
+        etcd_api.put(f'{jid}-5',str(no_workers))
         etcd_api.put(f'{jid}-3',str(state))
   
-    logger.info("ENTERED2")
     logger.info(state)
-    logger.info("ENTERED3")
-
+    no_workers = int(etcd_api.get(f'{jid}-5'))
+    
     if state == "shuffling":       
         logger.info('Waiting for mapper job'+jid+' to complete.')
         mapper_status = wait_for_job_done(job_name="mapper-job"+jid, namespace=namespace)
@@ -339,14 +337,18 @@ def schedule_job(jid, filepath, mapper, reducer,state):
 def rescedule_unfinished_jobs():
 
     logger.info("Rescheduling unfinished jobs")
-    manager_jobs = etcd_api.get_with_lock("manager-0")
+    manager = os.getenv('HOSTNAME')
+    manager_jobs = etcd_api.get_with_lock(manager)
     if manager_jobs is not None:
         job_count = int(manager_jobs)
-        for jobID in range(1,job_count+1):
+        for jid in range(1,job_count+1):
+            jobID = f'{manager}-{jid}'
             job_info = etcd_api.get_prefix(str(jobID))
-            state = job_info[3]    
-            schedule_job(str(jobID),str(job_info[0]),str(job_info[1]),str(job_info[2]),str(state))
+            state = job_info[3] 
+            if state != "completed":   
+                schedule_job(str(jobID),str(job_info[0]),str(job_info[1]),str(job_info[2]),str(state))
     logger.info("Rescheduling finished")
+
 
 if __name__ == "__main__":
     rescedule_unfinished_jobs()
