@@ -41,6 +41,28 @@ def put(key, value):
         logger.info("Could not retrieve etcd endpoints")        
 
 @retry(wait=wait_fixed(2))
+def get_with_lock_increment(key):
+    etcd_endpoints = get_etcd_endpoints()
+
+    if etcd_endpoints:
+        etcd = etcd3.client(host=etcd_endpoints[0],port = 2379)
+        lock = etcd.lock(key,ttl=60)
+        lock.acquire()
+        value, _ = etcd.get(key)
+        logger.info(value)
+        if value is not None:
+            int_val = int(value.decode('utf-8'))
+            str_val = str(int_val + 1)
+        else:
+            str_val = str(1)        
+        etcd.put(key,str_val)
+        lock.release()
+        return value.decode('utf-8') if value else None
+    else:
+        logger.info("Could not retrieve etcd endpoints")
+        return None
+    
+@retry(wait=wait_fixed(2))
 def get_with_lock(key):
     etcd_endpoints = get_etcd_endpoints()
 
