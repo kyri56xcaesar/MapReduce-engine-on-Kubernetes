@@ -45,6 +45,7 @@ def get_service_endpoints(namespace, service_name):
 
     return endpoint_addresses
 
+
 def get_pubkey():
     auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
     auth_endpoint=auth_endpoint_list[0]
