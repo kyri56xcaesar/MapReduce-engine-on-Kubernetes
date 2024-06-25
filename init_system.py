@@ -62,6 +62,10 @@ def load_image_to_minikube(image_name, time_to_sleep):
 
     time.sleep(time_to_sleep)
 
+def delete_many_manifessts(manifest_list):
+    for manifest in manifest_list:
+        subprocess.run(["kubectl", "delete", "-f", manifest])
+
 def apply_many_manifests(k8s_client, manifest_list):
     for manifest in manifest_list:
         apply_manifest(k8s_client, manifest)
@@ -108,10 +112,11 @@ if __name__ == "__main__":
     core_v1 = client.CoreV1Api()
     namespace = 'default'
     
-    manifests = ['manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml']
-    pattern = r'^manager-\d+$'
+    manifests = ['manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml', 'manifests/etcd-manifest.yaml']
     manager_pod_name = 'manager'
 
+
+    delete_many_manifessts(manifest_list=manifests)
 
     # perhaps switch to minikube environment?
     build_images()
@@ -120,7 +125,8 @@ if __name__ == "__main__":
     #apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")
     
     time.sleep(4)
-    
+   
+    pattern = r'^manager-\d+$'
     pods = get_matching_pods(core_v1, namespace, pattern)
     
     print(pods)

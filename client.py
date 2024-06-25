@@ -12,8 +12,12 @@ from kubernetes import client, config
 
 AUTH_PORT = "30003"
 UI_PORT = "30002"
+
+# AUTH_PORT = "1337"
+# UI_PORT = "1338"
 MANAGER_PORT = "5000"
-datasets = ["word_count_data.txt", "word_count_small.txt"]
+
+datasets = ["word_count_data.txt", "word_count_small.txt", "big_data.txt"]
 
 # LOGGING IN FROM AUTH SERVICE
 def login():
@@ -28,11 +32,11 @@ def login():
         'username': username,
         'password': password
     }
+    
     response = requests.post(url, headers=headers, json=data)
     
     print(response)
 
-    #print(data["message"])
     data = json.loads(response.text)
     if response.status_code == 401:
         sys.exit()
@@ -167,7 +171,7 @@ Usage: python client.py [MODE]|[OPTION]
     -h,	display this help text and exit
     ''')
 
-
+    
 def main():
     ip=get_node_ip_for_service("uiservice","dpyravlos")
 
@@ -230,6 +234,36 @@ def main():
                 token = login()
             print("Viewing jobs...")
             # TODO: Implement
+            while True:
+                # print submenu
+                print('''
+    1. View job result.
+    2. View job details.
+    3. Exit.
+                ''')
+                choice = input("> ")
+                if choice == '1':
+                    jid = input('Enter jid: ')
+                    url = f"http://{ip}:{UI_PORT}/job-result/{jid}"
+                    print(url)
+                    
+                    response = requests.get(url)
+                    
+                    print(response.json())
+                elif choice == '2':
+                    jid = input("Job ID: ")
+                    
+                    url = f"http://{ip}:{UI_PORT}/view-job/{jid}"
+                    print(url)
+                    
+                    response = requests.get(url)
+                    
+                    print(response.json())
+                elif choice == '3':
+                    print()
+                    break
+                else:
+                    print("Invalid option.\n")
         else:
             usage()
             sys.exit(2)
