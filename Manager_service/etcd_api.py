@@ -3,7 +3,7 @@ import etcd3
 from kubernetes import config, client
 from tenacity import retry, wait_fixed
 
-namespace = 'default'
+namespace = 'dpyravlos'
 
 def get_etcd_endpoints():
     config.load_incluster_config()

@@ -61,7 +61,7 @@ if __name__ == "__main__":
     config.load_kube_config()
     k8s_client = client.ApiClient()
     yaml_file = 'manifests/manager-manifest.yaml'
-    namespace = 'default'
+    namespace = 'dpyravlos'
     pattern = r'^manager-\d+$'
     manager_pod_name = 'manager'
     core_v1 = client.CoreV1Api()

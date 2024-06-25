@@ -110,7 +110,7 @@ if __name__ == "__main__":
     config.load_kube_config()
     k8s_client = client.ApiClient()
     core_v1 = client.CoreV1Api()
-    namespace = 'default'
+    namespace = 'dpyravlos'
     
     manifests = ['manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml', 'manifests/etcd-manifest.yaml']
     manager_pod_name = 'manager'

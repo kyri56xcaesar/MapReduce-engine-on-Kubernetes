@@ -6,7 +6,7 @@ from kubernetes import config, client
 
 
 def get_endpoints():
-    namespace = 'default'
+    namespace = 'dpyravlos'
     config.load_incluster_config()
     v1 = client.CoreV1Api()
     service_name = 'manager'

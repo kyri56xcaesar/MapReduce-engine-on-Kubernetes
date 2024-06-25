@@ -182,8 +182,8 @@ def check_jid(jid):
     logger.info(f'JOB id: {jid}')
     
     
-    mapper_job_status = check_job_status("mapper-job"+jid, 'default')
-    reducer_job_status = check_job_status("reducer-job"+jid, 'default')
+    mapper_job_status = check_job_status("mapper-job"+jid, 'dpyravlos')
+    reducer_job_status = check_job_status("reducer-job"+jid, 'dpyravlos')
     
     return jid_json_formatted_message(jid, "mngr_message", f"mapper_job_status: {mapper_job_status}\nreducer_job_status: {reducer_job_status}", 200)
 

@@ -7,7 +7,7 @@ metadata:
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  namespace: default
+  namespace: dpyravlos
   name: job-creator
 rules:
 - apiGroups: [""]
@@ -31,7 +31,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: job-creator-sa
-  namespace: default
+  namespace: dpyravlos
 roleRef:
   kind: Role
   name: job-creator
