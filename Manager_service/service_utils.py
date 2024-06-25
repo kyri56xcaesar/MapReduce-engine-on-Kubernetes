@@ -7,8 +7,3 @@ def jid_json_formatted_message(jid, type, content, code):
         type : content
     }), code
     
-    
-def get_output(jid):
-
-    pass
-    

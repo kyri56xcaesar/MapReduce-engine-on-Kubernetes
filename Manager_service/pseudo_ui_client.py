@@ -5,6 +5,11 @@ import time
 from kubernetes import config, client
 
 
+# This is used to test the Manager directly, sending requests to him
+
+
+
+
 def get_endpoints():
     namespace = 'default'
     config.load_incluster_config()
