@@ -15,7 +15,7 @@ app.secret_key = os.urandom(32)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-namespace="dpyravlos"
+namespace = "default"
 load_dotenv()
 
 PORT = os.environ['UI_PORT']
@@ -39,7 +39,7 @@ def get_service_endpoints(namespace, service_name):
     v1 = client.CoreV1Api()
 
     # Retrieve the endpoints details
-    endpoints = v1.list_namespaced_endpoints(name=service_name, namespace=namespace)
+    endpoints = v1.read_namespaced_endpoints(name=service_name, namespace=namespace)
 
     # Extract the IP addresses and ports
     endpoint_addresses = []
