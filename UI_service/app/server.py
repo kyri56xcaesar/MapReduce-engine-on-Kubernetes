@@ -15,7 +15,7 @@ app.secret_key = os.urandom(32)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-namespace="dpyravlos"
+namespace = "default"
 load_dotenv()
 
 PORT = os.environ['UI_PORT']
@@ -23,16 +23,6 @@ AUTH_PORT = os.environ['AUTH_PORT']
 MANAGER_PORT = os.environ['MANAGER_PORT']
 isLocal = os.environ['ISLOCAL']
 
-
-def get_next_manager_endpoint():
-    updated_manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    if updated_manager_endpoint_list== manager_endpoints:
-        manager_endpoint = get_next_manager_endpoint()
-        return next(roundrobin_iter)
-    else:
-        manager_endpoints=updated_manager_endpoint_list
-        roundrobin_iter=itertools.cycle(manager_endpoints)
-        return next(roundrobin_iter)
 
 
 
@@ -45,6 +35,8 @@ def get_service_endpoints(namespace, service_name):
 
     # Retrieve the endpoints details
     endpoints = v1.read_namespaced_endpoints(name=service_name, namespace=namespace)
+    
+    logger.info(f'endpoints read: {endpoints}')
 
     # Extract the IP addresses and ports
     endpoint_addresses = []
@@ -58,7 +50,25 @@ def get_service_endpoints(namespace, service_name):
     return endpoint_addresses
 
 manager_endpoints = get_service_endpoints(namespace, 'manager')
-roundrobin_iter=itertools.cycle(manager_endpoints)
+roundrobin_iter = itertools.cycle(manager_endpoints)
+
+def get_next_manager_endpoint():
+    
+    updated_manager_endpoint_list = get_service_endpoints(namespace, 'manager')
+        
+    logger.info(f'updated manager_endpoint_list: {updated_manager_endpoint_list}')
+    logger.info(f'manager endpoints: {manager_endpoints}')
+    
+    # manager_endpoints = []
+    
+    if updated_manager_endpoint_list == manager_endpoints:
+        return next(roundrobin_iter)
+    else:
+        manager_endpoints = updated_manager_endpoint_list
+        roundrobin_iter = itertools.cycle(manager_endpoints)
+        logger.info(f'round robit_iter: {roundrobin_iter}')
+        
+        return next(roundrobin_iter)
 
 def get_pubkey():
     auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
@@ -67,7 +77,10 @@ def get_pubkey():
     response = requests.get(f"http://{auth_endpoint}/pubkey")
     
     data = json.loads(response.text)
-    logger.info(f'data from response:\n {data}')
+    
+    #logger.info(f'data from response:\n {data}')
+    logger.info(f'response from auth: {response.status_code}')
+    
     public_key = b64decode(data['auth_message']).decode()
     
     return public_key
@@ -137,7 +150,6 @@ def send_jobs():
     
     
     manager_endpoint = get_next_manager_endpoint()
-    
     #manager_endpoint = "localhost:5000"  
 
     logger.info(f'Manager endpoints: {manager_endpoint}')
@@ -240,11 +252,6 @@ def cmd():
             return data.text
         else:
             return jsonify({"ui_message": "Only admin is allowed to run that command."})
-    elif cmd == "submit-job":
-        
-        return jsonify({"ui_message": "Not implemented yet."})
-    elif cmd == "view-jobs":
-        return jsonify({"ui_message": "Not implemented yet."})
     elif cmd == "view-ips":      
         return jsonify({"message":f"AuthService - EndPoint : {auth_endpoint}\nUiService - EndPoint: {ui_endpoint}\nManagerService - Endpoint: {manager_endpoint}"})
     else:
