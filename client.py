@@ -169,6 +169,8 @@ Usage: python client.py [MODE]|[OPTION]
 
 
 def main():
+    ip=get_node_ip_for_service("uiservice","dpyravlos")
+
     try:
         _, args = getopt.getopt(sys.argv[1:], "h", ["help"])
     except getopt.GetoptError as err:
