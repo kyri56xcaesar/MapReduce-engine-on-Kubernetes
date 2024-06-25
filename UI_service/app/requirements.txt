@@ -4,3 +4,4 @@ pyjwt
 cryptography
 kubernetes
 python-dotenv
+itertools
