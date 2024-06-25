@@ -116,7 +116,7 @@ if __name__ == "__main__":
     manager_pod_name = 'manager'
 
 
-    delete_many_manifessts(manifest_list=manifests)
+    #delete_many_manifessts(manifest_list=manifests)
 
     # perhaps switch to minikube environment?
     build_images()
