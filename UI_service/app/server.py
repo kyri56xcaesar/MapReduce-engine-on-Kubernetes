@@ -98,8 +98,8 @@ def view_jobs():
 @app.route("/view-job/<jid>", methods=["GET"])
 def view_job(jid):
     
-    manager_endpoint=manager_endpoint_list[0]  
     manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    manager_endpoint=manager_endpoint_list[0]  
     #manager_endpoint = "localhost:5000" 
     
     url = f"http://{manager_endpoint}/check/{jid}"
@@ -109,7 +109,7 @@ def view_job(jid):
 
     # Massage response
     
-    return flask_response
+    return flask_response.json
 
 @app.route("/send-jobs", methods=["POST"])
 def send_jobs():
@@ -168,12 +168,15 @@ def get_jid_result(jid):
     
     url = f"http://{manager_endpoint}/get-job-result/{jid}"
     
+    logger.info(f'manager_url: {url}')
+    
     response = requests.get(url=url)
+    flask_response = Response(response.content, status=response.status_code, content_type=response.headers['Content-Type'])
+
+    logger.info(f"response from manager: {flask_response}")
     
-    logger.info(f"response from manager: {response}")
     
-    
-    return response
+    return flask_response.json
 
 
 @app.route("/cmd", methods=["POST"])

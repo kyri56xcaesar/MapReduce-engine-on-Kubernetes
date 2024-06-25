@@ -124,7 +124,7 @@ if __name__ == "__main__":
     apply_many_manifests(k8s_client, manifests)
     #apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")
     
-    time.sleep(2)
+    time.sleep(4)
    
     pattern = r'^manager-\d+$'
     pods = get_matching_pods(core_v1, namespace, pattern)
