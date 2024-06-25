@@ -5,7 +5,7 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: ["endpoints"]
-  verbs: ["get", "list", "watch"]
+  verbs: ["create", "get", "list", "watch", "delete", "deletecollection", "patch", "update"]
 
 ---
 kind: ClusterRoleBinding

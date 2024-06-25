@@ -25,7 +25,7 @@ def login():
     password = getpass()
     
     ip=get_node_ip_for_service("authservice","dpyravlos")
-    print(ip)
+    #print(ip)
     url = f'http://{ip}:{AUTH_PORT}/login' 
     headers = {'Content-Type': 'application/json'}
     data = {
@@ -35,7 +35,8 @@ def login():
     
     response = requests.post(url, headers=headers, json=data)
     
-    print(response)
+    #print(response)
+    print('\n')
 
     data = json.loads(response.text)
     if response.status_code == 401:

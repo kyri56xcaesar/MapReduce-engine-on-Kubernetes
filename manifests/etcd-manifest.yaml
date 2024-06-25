@@ -1,3 +1,27 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: endpoints-reader
+rules:
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get", "list", "watch"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: endpoints-reader-binding
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: dpyravlos
+roleRef:
+  kind: ClusterRole
+  name: endpoints-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -38,11 +62,11 @@ spec:
         - name: ETCD_DATA_DIR
           value: /var/lib/etcd
         - name: ETCD_ADVERTISE_CLIENT_URLS
-          value: http://$(HOSTNAME).etcd:2379
+          value: http://etcd:2379
         - name: ETCD_LISTEN_CLIENT_URLS
           value: http://0.0.0.0:2379
         - name: ETCD_INITIAL_ADVERTISE_PEER_URLS
-          value: http://$(HOSTNAME).etcd:2380
+          value: http://etcd:2380
         - name: ETCD_LISTEN_PEER_URLS
           value: http://0.0.0.0:2380
         - name: ETCD_INITIAL_CLUSTER
