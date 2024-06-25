@@ -8,13 +8,14 @@ import os
 from kubernetes import client, config
 import logging
 import itertools
-
+import random
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+namespace="dpyravlos"
 load_dotenv()
 
 PORT = os.environ['UI_PORT']
@@ -22,7 +23,11 @@ AUTH_PORT = os.environ['AUTH_PORT']
 MANAGER_PORT = os.environ['MANAGER_PORT']
 isLocal = os.environ['ISLOCAL']
 
-namespace = 'default'
+
+def get_next_manager_endpoint():
+    updated_manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    return random.choice(updated_manager_endpoint_list)
+
 
 
 def get_service_endpoints(namespace, service_name):
@@ -34,8 +39,6 @@ def get_service_endpoints(namespace, service_name):
 
     # Retrieve the endpoints details
     endpoints = v1.read_namespaced_endpoints(name=service_name, namespace=namespace)
-    
-    logger.info(f'endpoints read: {endpoints}')
 
     # Extract the IP addresses and ports
     endpoint_addresses = []
@@ -48,6 +51,7 @@ def get_service_endpoints(namespace, service_name):
 
     return endpoint_addresses
 
+
 def get_pubkey():
     auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
     auth_endpoint=auth_endpoint_list[0]
@@ -55,10 +59,7 @@ def get_pubkey():
     response = requests.get(f"http://{auth_endpoint}/pubkey")
     
     data = json.loads(response.text)
-    
-    #logger.info(f'data from response:\n {data}')
-    logger.info(f'response from auth: {response.status_code}')
-    
+    logger.info(f'data from response:\n {data}')
     public_key = b64decode(data['auth_message']).decode()
     
     return public_key
@@ -85,8 +86,7 @@ def healthz():
 # Under construction....
 @app.route("/view-jobs", methods=["GET"])
 def view_jobs():
-    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    manager_endpoint=manager_endpoint_list[0] 
+    manager_endpoint=get_next_manager_endpoint()
     #manager_endpoint = "localhost:5000"  
 
     headers = request.headers
@@ -104,8 +104,7 @@ def view_jobs():
 @app.route("/view-job/<jid>", methods=["GET"])
 def view_job(jid):
     
-    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    manager_endpoint=manager_endpoint_list[0]  
+    manager_endpoint = get_next_manager_endpoint()  
     #manager_endpoint = "localhost:5000" 
     
     url = f"http://{manager_endpoint}/check/{jid}"
@@ -128,8 +127,9 @@ def send_jobs():
     if not payload:
         return jsonify({"ui_message": "Token verification failed."})
     
-    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
-    manager_endpoint = managerservice_endpoints[0]
+    
+    manager_endpoint = get_next_manager_endpoint()
+    
     #manager_endpoint = "localhost:5000"  
 
     logger.info(f'Manager endpoints: {manager_endpoint}')
@@ -166,8 +166,7 @@ def send_jobs():
 
 @app.route("/job-result/<jid>", methods=["GET"])
 def get_jid_result(jid):
-    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    manager_endpoint=manager_endpoint_list[0]
+    manager_endpoint = get_next_manager_endpoint()
     #manager_endpoint = "localhost:5000"  
 
     logger.info("Get Job result reguest, forwarding to manager...")
@@ -194,6 +193,9 @@ def cmd():
     manager_endpoint=manager_endpoint_list[0]
     ui_endpoint_list=get_service_endpoints(namespace,'uiservice')
     ui_endpoint=ui_endpoint_list[0]
+    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
+    manager_endpoint = managerservice_endpoints[0]
+
     data = request.get_json()
     headers = request.headers
 
@@ -230,6 +232,11 @@ def cmd():
             return data.text
         else:
             return jsonify({"ui_message": "Only admin is allowed to run that command."})
+    elif cmd == "submit-job":
+        
+        return jsonify({"ui_message": "Not implemented yet."})
+    elif cmd == "view-jobs":
+        return jsonify({"ui_message": "Not implemented yet."})
     elif cmd == "view-ips":      
         return jsonify({"message":f"AuthService - EndPoint : {auth_endpoint}\nUiService - EndPoint: {ui_endpoint}\nManagerService - Endpoint: {manager_endpoint}"})
     else:
