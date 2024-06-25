@@ -1,7 +1,7 @@
 # Project 2024 katanemimena K8S map reduce
 
 
-## HOW TO use locally so far.
+## HOW TO use locally.
 
 
 1. run: minikube start --vm-driver=docker 
