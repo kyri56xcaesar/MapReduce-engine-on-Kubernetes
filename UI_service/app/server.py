@@ -25,7 +25,8 @@ isLocal = os.environ['ISLOCAL']
 
 
 def get_next_manager_endpoint():
-    updated_manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    
+    updated_manager_endpoint_list = get_service_endpoints(namespace, 'manager')
     return random.choice(updated_manager_endpoint_list)
 
 
@@ -38,7 +39,7 @@ def get_service_endpoints(namespace, service_name):
     v1 = client.CoreV1Api()
 
     # Retrieve the endpoints details
-    endpoints = v1.read_namespaced_endpoints(name=service_name, namespace=namespace)
+    endpoints = v1.list_namespaced_endpoints(name=service_name, namespace=namespace)
 
     # Extract the IP addresses and ports
     endpoint_addresses = []
