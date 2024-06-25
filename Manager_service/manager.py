@@ -17,10 +17,9 @@ import etcd_api
 # API 
 # /health if service is running
 # /  idk yet
-# /setup, recieve map/reduce functions, filename, maybe return job id?
 # provide seperate functions for check?
 #
-# /submit-job, submit the job to K8S
+# /submit-job, schedule the job to K8S
 # /check/id  -> check job id status
 #
 #
@@ -36,7 +35,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_prefixed_env()
     
-    # subprocess.run(["python3", "kube_client.py"]) # reschedule any unfinished jobs
     rescedule_unfinished_jobs()
 
     return app
@@ -68,7 +66,6 @@ def submit_job():
         return jsonify({"mngr_message":"must provide the filename"}), 400
     
     # if all good..
-    # create a new "job" placeholder, job holds a job conf as well.
     try:
 
         map_file = request.files['mapper']
@@ -104,6 +101,7 @@ def submit_job():
         
         # Schedule an actual job in the K8S
         job_status = schedule_job(str(jid), filename, mapper_content, reducer_content,phase)
+        
         logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job
