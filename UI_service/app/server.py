@@ -7,6 +7,7 @@ import jwt
 import os
 from kubernetes import client, config
 import logging
+import itertools
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
@@ -14,6 +15,7 @@ app.secret_key = os.urandom(32)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+namespace="dpyravlos"
 load_dotenv()
 
 PORT = os.environ['UI_PORT']
@@ -21,7 +23,17 @@ AUTH_PORT = os.environ['AUTH_PORT']
 MANAGER_PORT = os.environ['MANAGER_PORT']
 isLocal = os.environ['ISLOCAL']
 
-namespace = 'default'
+
+def get_next_manager_endpoint():
+    updated_manager_endpoint_list=get_service_endpoints(namespace, 'manager')
+    if updated_manager_endpoint_list== manager_endpoints:
+        manager_endpoint = get_next_manager_endpoint()
+        return next(roundrobin_iter)
+    else:
+        manager_endpoints=updated_manager_endpoint_list
+        roundrobin_iter=itertools.cycle(manager_endpoints)
+        return next(roundrobin_iter)
+
 
 
 def get_service_endpoints(namespace, service_name):
@@ -44,6 +56,9 @@ def get_service_endpoints(namespace, service_name):
                 endpoint_addresses.append(f"{address.ip}:{port.port}")
 
     return endpoint_addresses
+
+manager_endpoints = get_service_endpoints(namespace, 'manager')
+roundrobin_iter=itertools.cycle(manager_endpoints)
 
 def get_pubkey():
     auth_endpoint_list=get_service_endpoints(namespace, 'authservice')
@@ -79,8 +94,7 @@ def healthz():
 # Under construction....
 @app.route("/view-jobs", methods=["GET"])
 def view_jobs():
-    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    manager_endpoint=manager_endpoint_list[0] 
+    manager_endpoint=get_next_manager_endpoint()
     #manager_endpoint = "localhost:5000"  
 
     headers = request.headers
@@ -98,8 +112,7 @@ def view_jobs():
 @app.route("/view-job/<jid>", methods=["GET"])
 def view_job(jid):
     
-    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    manager_endpoint=manager_endpoint_list[0]  
+    manager_endpoint = get_next_manager_endpoint()  
     #manager_endpoint = "localhost:5000" 
     
     url = f"http://{manager_endpoint}/check/{jid}"
@@ -122,8 +135,9 @@ def send_jobs():
     if not payload:
         return jsonify({"ui_message": "Token verification failed."})
     
-    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
-    manager_endpoint = managerservice_endpoints[0]
+    
+    manager_endpoint = get_next_manager_endpoint()
+    
     #manager_endpoint = "localhost:5000"  
 
     logger.info(f'Manager endpoints: {manager_endpoint}')
@@ -160,8 +174,7 @@ def send_jobs():
 
 @app.route("/job-result/<jid>", methods=["GET"])
 def get_jid_result(jid):
-    manager_endpoint_list=get_service_endpoints(namespace, 'manager')
-    manager_endpoint=manager_endpoint_list[0]
+    manager_endpoint = get_next_manager_endpoint()
     #manager_endpoint = "localhost:5000"  
 
     logger.info("Get Job result reguest, forwarding to manager...")
@@ -188,6 +201,9 @@ def cmd():
     manager_endpoint=manager_endpoint_list[0]
     ui_endpoint_list=get_service_endpoints(namespace,'uiservice')
     ui_endpoint=ui_endpoint_list[0]
+    managerservice_endpoints = get_service_endpoints(namespace, 'manager')
+    manager_endpoint = managerservice_endpoints[0]
+
     data = request.get_json()
     headers = request.headers
 
