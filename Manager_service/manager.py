@@ -77,8 +77,6 @@ def submit_job():
         logger.info(f'map_file received: {map_file}')
         logger.info(f'reduce_file received: {reduce_file}')
         
-        # Save data in a db
-        # job: Job = Job()
         
         # Setup Job conf
         mapper_content = map_file.read().decode("utf-8")
@@ -88,32 +86,24 @@ def submit_job():
         logger.info(f'reducer_content received:\n {reducer_content}')
         logger.info(f'filename: {filename}')
         
-        # job.setup_conf(mapper_content, reducer_content, filename)
 
-        # _, jid = db.insert_job(job.JobConfiguration)
         phase = "mapping"
-        # job.jid = jid
-        # lock = etcd_api.etcd3.Lock("manager-0")
-        # lock.acquire()
+
         manager_jobs = etcd_api.get_with_lock("manager-0")
         if manager_jobs is not None:
             job_count = int(manager_jobs)
             jid = job_count + 1
         else:
             jid=1
-        # etcd_api.put(str(jid),f"{filename},{mapper_content},{reducer_content},{phase}")
         etcd_api.put(f'{jid}-0',str(filename))
         etcd_api.put(f'{jid}-1',str(mapper_content))
         etcd_api.put(f'{jid}-2',str(reducer_content))
         etcd_api.put(f'{jid}-3',str(phase))
         etcd_api.put_with_lock("manager-0",str(jid))       
-        # lock.release()
         logger.info(f'current JID: {jid}')
-        #jid = 0
         
         # Schedule an actual job in the K8S
         job_status = schedule_job(str(jid), filename, mapper_content, reducer_content,phase)
-        # job_status = "no job"
         logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job
@@ -122,44 +112,6 @@ def submit_job():
     except Exception as e:
         logger.error(f'Exception: {e}')
         return jid_json_formatted_message("-1", "error", f"an error occured, details: {str(e)}", 500)
-
-# Edit a specific jid mapper
-@app.route("/setup/mapper/<jid>", methods=["POST"])
-def setup_job_mapper(jid='-1'):
-
-    if not request.files or 'mapper' not in request.files:
-        return jid_json_formatted_message(jid=jid, type="mngr_message", content="must provide mapper file", code=400)
-
-    mapper_file = request.files['mapper'].read().decode("utf-8")
-    
-    pass
-    
-    return jid_json_formatted_message(jid, "mngr_message", "mapper not updated. Method under construction...", 400)
-  
-# Edit a specific jid reducer
-@app.route("/setup/reducer/<jid>", methods=["POST"])
-def setup_job_reducer(jid='-1'):
-
-    if not request.files or 'reducer' not in request.files:
-        return jid_json_formatted_message(jid, "mngr_message", "must provide reducer file", 400)
-    
-    reducer_file = request.files['reducer'].read().decode("utf-8")
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "reducer not updated. Method under construction.", 400)
-
-# Edit a specific jid filename
-@app.route("/setup/filename/<jid>", methods=["POST"])
-def setup_job_filename(jid='-1'):
-
-    filename = request.form.get('filename')
-    
-    if not filename:
-        return jid_json_formatted_message(jid, "mngr_message", "must provide filename", 400)
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "filename not updated. Method under construction", 400)
-
 
 # Under construction...
 @app.route("/check", methods=["GET"])

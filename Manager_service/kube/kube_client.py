@@ -43,7 +43,7 @@ def create_and_apply_mapper_Job_manifest(api_instance, jid, mymapfunc, myreducef
                 containers=[
                     client.V1Container(
                         name="mapreduce",
-                        image="mapper:latest",
+                        image="kyri56xcaesar/katanemimena:mapper",
                         image_pull_policy="IfNotPresent",
                         command=[
                             "sh", "-c",
@@ -114,7 +114,7 @@ def create_and_apply_reducer_Job_manifest(api_instance, jid, myfunc, no_reducers
                     containers=[
                         client.V1Container(
                             name="mapreduce",
-                            image="reducer:latest",
+                            image="kyri56xcaesar/katanemimena:reducer",
                             image_pull_policy="IfNotPresent",
                             command=[
                                 "sh", "-c",
@@ -202,8 +202,7 @@ def check_job_exists(job_name, namespace):
             return True
     
     return False
-
-          
+         
 def delete_job(api_instance, job_name):
     api_response = api_instance.delete_namespaced_job(
         name=job_name,

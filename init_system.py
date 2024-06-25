@@ -119,7 +119,7 @@ if __name__ == "__main__":
     delete_many_manifessts(manifest_list=manifests)
 
     # perhaps switch to minikube environment?
-    build_images()
+    #build_images()
     #load_images_to_minikube()
     apply_many_manifests(k8s_client, manifests)
     #apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")

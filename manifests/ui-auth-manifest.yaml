@@ -78,7 +78,7 @@ spec:
     spec:
       containers:
       - name: uiservice
-        image: gkonofaos/uiservice:latest  # Replace with your actual image and tag
+        image: kyri56xcaesar/katanemimena:uiservice  # Replace with your actual image and tag
         ports:
           - containerPort: 1338  # Port your application listens on inside the container
         resources:
@@ -121,7 +121,7 @@ spec:
     spec:
       containers:
       - name: authservice
-        image: gkonofaos/authservice:latest  # Use the image tag you built
+        image: kyri56xcaesar/katanemimena:authservice  # Use the image tag you built
         ports:
         - containerPort: 1337  # Ensure this matches the exposed port in your Dockerfile
         resources:
