@@ -17,7 +17,7 @@ UI_PORT = "30002"
 # UI_PORT = "1338"
 MANAGER_PORT = "5000"
 
-datasets = ["word_count_data.txt", "word_count_small.txt", "big_data.txt"]
+datasets = ["word_count_data.txt", "word_count_small.txt"]
 
 # LOGGING IN FROM AUTH SERVICE
 def login():
