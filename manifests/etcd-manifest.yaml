@@ -63,6 +63,7 @@ spec:
           mountPath: /var/lib/etcd
         resources:
           limits:
+
             cpu: "1"
             memory: "1000Mi"
   volumeClaimTemplates:

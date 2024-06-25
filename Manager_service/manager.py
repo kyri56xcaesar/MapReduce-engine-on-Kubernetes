@@ -73,9 +73,7 @@ def submit_job():
         
         logger.info(f'map_file received: {map_file}')
         logger.info(f'reduce_file received: {reduce_file}')
-        
 
-        # Setup Job conf
         mapper_content = map_file.read().decode("utf-8")
         reducer_content = reduce_file.read().decode("utf-8")
         
@@ -83,31 +81,32 @@ def submit_job():
         logger.info(f'reducer_content received:\n {reducer_content}')
         logger.info(f'filename: {filename}')
         
-
         phase = "mapping"
+        logger.info(os.getenv('HOSTNAME'))
+        manager = os.getenv('HOSTNAME')
+        manager_jobs = etcd_api.get_with_lock_increment(manager)
 
-        manager_jobs = etcd_api.get_with_lock("manager-0")
         if manager_jobs is not None:
             job_count = int(manager_jobs)
             jid = job_count + 1
         else:
             jid=1
-        # etcd_api.put(str(jid),f"{filename},{mapper_content},{reducer_content},{phase}")
-        etcd_api.put(f'{jid}-0',str(filename))
-        etcd_api.put(f'{jid}-1',str(mapper_content))
-        etcd_api.put(f'{jid}-2',str(reducer_content))
-        etcd_api.put(f'{jid}-3',str(phase))
-        etcd_api.put_with_lock("manager-0",str(jid))       
-
-        logger.info(f'current JID: {jid}')
+        jobID = f'{manager}-{jid}'
+        # etcd_api.put_with_lock("manager-0",str(jid))
+        etcd_api.put(f'{jobID}-0',str(filename))
+        etcd_api.put(f'{jobID}-1',str(mapper_content))
+        etcd_api.put(f'{jobID}-2',str(reducer_content))
+        etcd_api.put(f'{jobID}-3',str(phase))
+               
+        logger.info(f'current JID: {jobID}')
         
         # Schedule an actual job in the K8S
-        job_status = schedule_job(str(jid), filename, mapper_content, reducer_content,phase)
+        job_status = schedule_job(str(jobID), filename, mapper_content, reducer_content,phase)
+        logger.info(f'jid: {jobID}, status: {job_status}')
 
-        logger.info(f'jid: {jid}, status: {job_status}')
         
         # submit the job
-        return jid_json_formatted_message(str(jid), "mngr_message", f"Job submitted successfully: {job_status}", 200)
+        return jid_json_formatted_message(str(jobID), "mngr_message", f"Job submitted successfully: {job_status}", 200)
     
     except Exception as e:
         logger.error(f'Exception: {e}')
