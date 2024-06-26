@@ -65,8 +65,9 @@ On 2 seperate terminals:
 - [x] Implement job submit/view
 
 #### General
-- [ ] Organize/clean code
+- [x] Organize/clean code
 - [x] Testing/Fuzzing
+- [ ] Automate Unit tests...
 - [x] Set up in pods
 
 ### Manager Service
@@ -81,6 +82,10 @@ On 2 seperate terminals:
 - [x] decide/reasses kind of manifests
 - [x] automate process
 - [x] provide access for Job status view
+- [ ] provide access for results view..
+- [ ] setup FTP server or sth for input/output of datafiles
+- [ ] Optimize code
+- [ ] Optimize process
 
 ### Shared File System
 #### (PV & PVCs: persistent volume and persistent volume claims)
@@ -92,4 +97,9 @@ On 2 seperate terminals:
 - [x] etcd installation
 - [x] etcd configuration
 - [x] etcd testing
- 
+
+etcd parematers of resource/limits should be adjusted per system...
+
+
+# DEMO  vid#
+https://youtu.be/pKnTrdCvqPk
