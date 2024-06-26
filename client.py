@@ -11,14 +11,14 @@ import subprocess
 #ip = minikube_ip    
 
 ip = "localhost"
-#AUTH_PORT = "30001"
-#UI_PORT = "30002"
-#MANAGER_PORT = "5000"
-AUTH_PORT = "1337"
-UI_PORT = "1338"
+AUTH_PORT = "30001"
+UI_PORT = "30002"
+
+# AUTH_PORT = "1337"
+# UI_PORT = "1338"
 MANAGER_PORT = "5000"
 
-datasets = ["word_count_data.txt", "word_count_small.txt", "word_count_large.txt"]
+datasets = ["word_count_data.txt", "word_count_small.txt", "big_data.txt"]
 
 # LOGGING IN FROM AUTH SERVICE
 def login():
@@ -199,13 +199,14 @@ def main():
             while True:
                 # print submenu
                 print('''
-    1. View existing jobs.
+    1. View job result.
     2. View job details.
     3. Exit.
                 ''')
                 choice = input("> ")
                 if choice == '1':
-                    url = f"http://localhost:{UI_PORT}/view-jobs"
+                    jid = input('Enter jid: ')
+                    url = f"http://{ip}:{UI_PORT}/job-result/{jid}"
                     print(url)
                     
                     response = requests.get(url)
@@ -214,7 +215,7 @@ def main():
                 elif choice == '2':
                     jid = input("Job ID: ")
                     
-                    url = f"http://localhost:{UI_PORT}/view-job/{jid}"
+                    url = f"http://{ip}:{UI_PORT}/view-job/{jid}"
                     print(url)
                     
                     response = requests.get(url)

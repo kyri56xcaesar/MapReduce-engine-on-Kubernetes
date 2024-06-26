@@ -4,11 +4,9 @@ from dotenv import load_dotenv
 from flask import *
 from kubernetes import client, config
 
-from Jobs import *
 from kube.kube_client import *
 from kube.kube_utils import *
 from service_utils import *
-import db.database as db
 import etcd_api
 # This service should provide an REST api in order to setup an execution of a JOB
 #
@@ -19,10 +17,9 @@ import etcd_api
 # API 
 # /health if service is running
 # /  idk yet
-# /setup, recieve map/reduce functions, filename, maybe return job id?
 # provide seperate functions for check?
 #
-# /submit-job, submit the job to K8S
+# /submit-job, schedule the job to K8S
 # /check/id  -> check job id status
 #
 #
@@ -38,8 +35,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_prefixed_env()
     
-    db.init_app(app, db_path=os.environ['FLASK_DATABASE'])
-    # subprocess.run(["python3", "kube_client.py"]) # reschedule any unfinished jobs
     rescedule_unfinished_jobs()
 
     return app
@@ -54,11 +49,8 @@ def main():
 @app.route("/healthz", methods=["GET"])
 def health():
     
-    _, status = db.check_db()
+    return {'mngr_status':'I am alive'}
 
-    return {'status':status}
-
-@app.route("/submit-job/", methods=["POST"])
 @app.route("/submit-job", methods=["POST"])
 def submit_job():
      
@@ -74,7 +66,6 @@ def submit_job():
         return jsonify({"mngr_message":"must provide the filename"}), 400
     
     # if all good..
-    # create a new "job" placeholder, job holds a job conf as well.
     try:
 
         map_file = request.files['mapper']
@@ -94,6 +85,7 @@ def submit_job():
         logger.info(os.getenv('HOSTNAME'))
         manager = os.getenv('HOSTNAME')
         manager_jobs = etcd_api.get_with_lock_increment(manager)
+
         if manager_jobs is not None:
             job_count = int(manager_jobs)
             jid = job_count + 1
@@ -111,6 +103,7 @@ def submit_job():
         # Schedule an actual job in the K8S
         job_status = schedule_job(str(jobID), filename, mapper_content, reducer_content,phase)
         logger.info(f'jid: {jobID}, status: {job_status}')
+
         
         # submit the job
         return jid_json_formatted_message(str(jobID), "mngr_message", f"Job submitted successfully: {job_status}", 200)
@@ -119,61 +112,12 @@ def submit_job():
         logger.error(f'Exception: {e}')
         return jid_json_formatted_message("-1", "error", f"an error occured, details: {str(e)}", 500)
 
-# Edit a specific jid mapper
-@app.route("/setup/mapper/<jid>", methods=["POST"])
-def setup_job_mapper(jid='-1'):
-
-    if not request.files or 'mapper' not in request.files:
-        return jid_json_formatted_message(jid=jid, type="mngr_message", content="must provide mapper file", code=400)
-
-    mapper_file = request.files['mapper'].read().decode("utf-8")
-    
-    success = db.update_job_mapper_by_jid(jid, mapper_file)    
-    
-    if success:
-        return jid_json_formatted_message(jid, "mngr_message", "mapper updated successfully", 200)
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "mapper not updated", 400)
-  
-# Edit a specific jid reducer
-@app.route("/setup/reducer/<jid>", methods=["POST"])
-def setup_job_reducer(jid='-1'):
-
-    if not request.files or 'reducer' not in request.files:
-        return jid_json_formatted_message(jid, "mngr_message", "must provide reducer file", 400)
-    
-    reducer_file = request.files['reducer'].read().decode("utf-8")
-    
-    success = db.update_job_reducer_by_jid(jid, reducer_file)    
-    
-    if success:
-        return jid_json_formatted_message(jid, "mngr_message", "reducer updated successfully", 200)
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "reducer not updated", 400)
-
-# Edit a specific jid filename
-@app.route("/setup/filename/<jid>", methods=["POST"])
-def setup_job_filename(jid='-1'):
-
-    filename = request.form.get('filename')
-    
-    if not filename:
-        return jid_json_formatted_message(jid, "mngr_message", "must provide filename", 400)
-    
-    success = db.update_job_filename_by_jid(jid, filename)    
-    
-    if success:
-        return jid_json_formatted_message(jid, "mngr_message", "filename updated successfully", 200)
-    
-    
-    return jid_json_formatted_message(jid, "mngr_message", "filename not updated", 400)
-
+# Under construction...
 @app.route("/check", methods=["GET"])
-@app.route("/check/", methods=["GET"])
 def check_all():
-    jids = db.get_all_jids()
+    
+    # need to get all jids from etcd.
+    jids = []
     logger.info(f'existing jids: {jids}')
     
     if jids:
@@ -188,10 +132,6 @@ def check_jid(jid):
     
     logger.info(f'JOB id: {jid}')
     
-    job: Job = db.get_job_by_id(jid)
-    
-    # if not job:
-    #     return jsonify({"status":"does't exist"})
     
     mapper_job_status = check_job_status("mapper-job"+jid, 'default')
     reducer_job_status = check_job_status("reducer-job"+jid, 'default')
