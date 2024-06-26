@@ -112,7 +112,7 @@ if __name__ == "__main__":
     core_v1 = client.CoreV1Api()
     namespace = 'default'
     
-    manifests = ['manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml', 'manifests/etcd-manifest.yaml']
+    manifests = ['manifests/etcd-manifest.yaml', 'manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml']
     manager_pod_name = 'manager'
 
 

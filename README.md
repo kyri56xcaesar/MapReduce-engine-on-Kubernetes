@@ -31,6 +31,9 @@ On 2 seperate terminals:
     - kubectl port-forward service/uiservice 30002:1338
 
 
+## For Okeanos cluster
+- only action to be done is so change the namespace variable from 'default' to 'yours'
+
 
 
 
