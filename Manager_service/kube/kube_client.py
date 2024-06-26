@@ -215,7 +215,9 @@ def delete_job(api_instance, job_name):
                 
 def schedule_job(jid, filepath, mapper, reducer,state):
 
-    namespace="default"
+    namespace = "default"
+    mapper_status = False
+    reducer_status = False
     logger.info("ENTERED")
     
     # Load kube config from outside
