@@ -7,7 +7,6 @@ import jwt
 import os
 from kubernetes import client, config
 import logging
-import itertools
 import random
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
