@@ -86,6 +86,15 @@ def healthz():
 # Under construction....
 @app.route("/view-jobs", methods=["GET"])
 def view_jobs():
+    
+    headers = request.headers
+    token = headers["Cookie"][6:]
+    if not token:
+        return jsonify({"ui_message": "No token was provided."})
+    payload = verify_user(token)
+    if not payload:
+        return jsonify({"ui_message": "Token verification failed."})
+    
     manager_endpoint=get_next_manager_endpoint()
     #manager_endpoint = "localhost:5000"  
 
@@ -103,6 +112,15 @@ def view_jobs():
 
 @app.route("/view-job/<jid>", methods=["GET"])
 def view_job(jid):
+    
+    headers = request.headers
+    token = headers["Cookie"][6:]
+    if not token:
+        return jsonify({"ui_message": "No token was provided."})
+    payload = verify_user(token)
+    if not payload:
+        return jsonify({"ui_message": "Token verification failed."})
+    
     
     manager_endpoint = get_next_manager_endpoint()  
     #manager_endpoint = "localhost:5000" 
