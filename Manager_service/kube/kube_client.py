@@ -338,16 +338,29 @@ def schedule_job(jid, filepath, mapper, reducer,state):
 def rescedule_unfinished_jobs():
 
     logger.info("Rescheduling unfinished jobs")
+    
     manager = os.getenv('HOSTNAME')
+    logger.info(f'manager hostname: {manager}')
+    
     manager_jobs = etcd_api.get_with_lock(manager)
+    logger.info(f'manager_jobs: {manager_jobs}')
+    
     if manager_jobs is not None:
+
         job_count = int(manager_jobs)
+        logger.info(f'job_count: {job_count}')
         for jid in range(1,job_count+1):
+            
             jobID = f'{manager}-{jid}'
             job_info = etcd_api.get_prefix(str(jobID))
             state = job_info[3] 
+            logger.info(f'JobID: {jobID}')
+            logger.info(f'Job info: {job_info}')
+            logger.info(f'Job state: {state}')
+            
             if state != "completed":   
                 schedule_job(str(jobID),str(job_info[0]),str(job_info[1]),str(job_info[2]),str(state))
+    
     logger.info("Rescheduling finished")
 
 if __name__ == "__main__":
