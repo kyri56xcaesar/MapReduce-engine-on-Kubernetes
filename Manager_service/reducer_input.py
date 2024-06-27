@@ -1,5 +1,3 @@
-# Example user input
-
 def reducer(entries):
 
     accumulator = dict()
