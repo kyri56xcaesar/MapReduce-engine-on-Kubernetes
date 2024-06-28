@@ -97,7 +97,7 @@ spec:
       serviceAccountName: job-creator-sa  # Service account added here
       containers:
         - name: mapreduce
-          image: kyri56xcaesar/katanemimena:manager
+          image: kyri56xcaesar/katanemimena:managerakis
           command: ["python3"]
           args: ["/manager.py"]
           ports:
