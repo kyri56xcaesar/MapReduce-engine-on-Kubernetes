@@ -9,6 +9,10 @@ kyri56xcaesar/katanemimena:<image> (managerakis, mapper, reducer, uiservice, aut
 then use client.py..
 
 
+User: admin, password: password
+User: guest, password: password
+
+
 Overall difference with master is the kube namespace. Here it is set to 'dpyravlos'. The code was quite sloppy in this manner, in order to change the namespace inside, you need to dig a bit...
 AND the client script is adjusted to lookup cluster node ips correctly...
 
