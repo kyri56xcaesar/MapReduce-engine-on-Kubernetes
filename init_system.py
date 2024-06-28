@@ -121,8 +121,8 @@ if __name__ == "__main__":
     # perhaps switch to minikube environment?
     build_images()
     #load_images_to_minikube()
-    apply_many_manifests(k8s_client, manifests)
-    #apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")
+    #apply_many_manifests(k8s_client, manifests)
+    apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")
     
     time.sleep(4)
    

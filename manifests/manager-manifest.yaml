@@ -43,7 +43,7 @@ metadata:
   name: manager-pv
 spec:
   capacity:
-    storage: 1Gi
+    storage: 2Gi
   accessModes:
     - ReadWriteMany
   hostPath:
@@ -58,7 +58,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
+      storage: 2Gi
 ---
 apiVersion: v1
 kind: Service
