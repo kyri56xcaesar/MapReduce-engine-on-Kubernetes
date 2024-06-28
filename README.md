@@ -1,5 +1,8 @@
 # Project 2024 katanemimena K8S map reduce
 
+Dear Vsam
+Check SUBMIT_PROJECT branch !
+
 
 ## HOW TO use locally.
 
@@ -52,6 +55,7 @@ On 2 seperate terminals:
 - [x] Generate RSA keys
 - [x] Expose public key
 - [x] Implement admin commands
+- [ ] make it actually stateless, seperate from DB
 
 #### UI Service
 - [x] Redesigned completely
@@ -77,15 +81,15 @@ On 2 seperate terminals:
 #### Workers are spawned and monitored by the Manager Service
 - [x] API set
 - [x] Job Configuring
-- [x] Hold Jobs in a db, Propably will use ETCD for this
-- [x] Formatting/setup
+- [x] Hold Jobs in a db temporarly, Propably will use ETCD for this
+- [x] Formatting/setup, split input
 - [x] Initialization, talk to cluster.
 - [x] Instantiate images on kubernetes and then apply logic to dynamically change inp/out
 - [x] master/workers 
 - [x] decide/reasses kind of manifests
 - [x] automate process
 - [x] provide access for Job status view
-- [ ] provide access for results view..
+- [x] provide access for results view..
 - [ ] setup FTP server or sth for input/output of datafiles
 - [ ] Optimize code
 - [ ] Optimize process
