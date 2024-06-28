@@ -35,7 +35,8 @@ On 2 seperate terminals:
 
 
 ## For Okeanos cluster
-- only action to be done is so change the namespace variable from 'default' to 'yours'
+- action to be done is so change the namespace variable from 'default' to 'yours'
+- Client script needs some configuring as well...
 
 
 
