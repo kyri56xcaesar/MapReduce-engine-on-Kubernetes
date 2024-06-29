@@ -112,7 +112,7 @@ if __name__ == "__main__":
     core_v1 = client.CoreV1Api()
     namespace = 'default'
     
-    manifests = ['manifests/etcd-manifest.yaml', 'manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml']
+    manifests = ['manifests/manager-manifest.yaml', 'manifests/ui-auth-manifest.yaml']
     manager_pod_name = 'manager'
 
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     build_images()
     #load_images_to_minikube()
     #apply_many_manifests(k8s_client, manifests)
-    apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")
+    #apply_manifest(k8s_client, "manifests/ui-auth-manifest.yaml")
     
     time.sleep(4)
    
