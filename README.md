@@ -19,3 +19,8 @@ AND the client script is adjusted to lookup cluster node ips correctly...
 
 
 
+# note:
+check master branch README for more generic information bout the proj.
+
+# DEMO  vid#
+https://youtu.be/pKnTrdCvqPk
