@@ -1,8 +1,3 @@
-# Project 2024 katanemimena K8S map reduce
-
-Dear Vsam
-Check SUBMIT_PROJECT branch !
-
 
 ## HOW TO use locally.
 
